@@ -3,7 +3,7 @@ import astropy.units as u
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from photutils.aperture import CircularAperture, aperture_photometry
-from jwstComet.utils import readCube, subchannel_splice
+from jwstComet.utils import readCube, subchannel_splice, readHeader
 
 class beam(object):
 
@@ -107,14 +107,19 @@ class beam(object):
 
         #Save to a file
         specFile = 'JWST-Extract-{:.2f}-arcsecRadAp-{:.1f}-arcsecXoff-{:.1f}-arcsecYoff-{:.2f}um-to-{:.2f}um.txt'.format(radAp.value,xOffset.value,yOffset.value,waveLo.value,waveUp.value)
+        #Get header observation information
+        obsInfo = readHeader(cubeFile[0])
         with open(specFile, 'w') as fn:
             #Create headers with extract information
-            fn.write('#Lower wavelength (um): {}\n'.format(waveLo.value))
-            fn.write('#Upper wavelength (um): {}\n'.format(waveUp.value))
-            fn.write('#Aperture radius (arcsec): {}\n'.format(radAp.value))
-            fn.write('#X offset (arcsec): {}\n'.format(xOffset.value))
-            fn.write('#Y offset (arcsec): {}\n'.format(yOffset.value))
-            fn.write('Wave (micron) Flux (Jy) Noise (Jy)\n')
+            fn.write('#Target name:{}\n'.format(obsInfo.target))
+            fn.write('#Obs. Start:{} {}\n'.format(obsInfo.dateBeg,obsInfo.timeBeg))
+            fn.write('#Obs. End:{} {}\n'.format(obsInfo.dateEnd,obsInfo.timeEnd))
+            fn.write('#Lower wavelength (um):{}\n'.format(waveLo.value))
+            fn.write('#Upper wavelength (um):{}\n'.format(waveUp.value))
+            fn.write('#Aperture radius (arcsec):{}\n'.format(radAp.value))
+            fn.write('#X offset (arcsec):{}\n'.format(xOffset.value))
+            fn.write('#Y offset (arcsec):{}\n'.format(yOffset.value))
+            fn.write('#Wave (micron) Flux (Jy) Noise (Jy)\n')
 
             for w, s, e in zip(wvls[wv_region],spec[wv_region],sigma[wv_region]):
                 fn.write('{} {} {}\n'.format(w,s,e))

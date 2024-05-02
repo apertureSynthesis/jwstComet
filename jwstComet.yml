@@ -12,3 +12,4 @@ dependencies:
    - ipython
    - jupyter
    - pylint
+   - astroquery==0.4.7

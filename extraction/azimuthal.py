@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from photutils.aperture import CircularAperture, CircularAnnulus, ApertureStats
-from jwstComet.utils import readCube, subchannel_splice
+from jwstComet.utils import readCube, subchannel_splice, readHeader
 
 class azimuthal(object):
 
@@ -111,13 +111,18 @@ class azimuthal(object):
 
         #Save the file
         specFile = 'JWST-Extract-{:.2f}-arcsecInnerRadius-{:.2f}-arcsecOuterRadius-{:.2f}um-to-{:.2f}um.txt'.format(innerRadius.value,outerRadius.value,waveLo.value,waveUp.value)
+        #Get header observation information
+        obsInfo = readHeader(cubeFile[0])
         with open(specFile, 'w') as fn:
             #Create headers with extract information
-            fn.write('#Lower wavelength (um): {}\n'.format(waveLo.value))
-            fn.write('#Upper wavelength (um): {}\n'.format(waveUp.value))
-            fn.write('#Inner annulus radius (arcsec): {}\n'.format(innerRadius.value))
-            fn.write('#Outer annulus radius (arcsec): {}\n'.format(outerRadius.value))
-            fn.write('Wave (micron) Flux (Jy) Noise (Jy)\n')
+            fn.write('#Target name:{}\n'.format(obsInfo.target))
+            fn.write('#Obs. Start:{} {}\n'.format(obsInfo.dateBeg,obsInfo.timeBeg))
+            fn.write('#Obs. End:{} {}\n'.format(obsInfo.dateEnd,obsInfo.timeEnd))
+            fn.write('#Lower wavelength (um):{}\n'.format(waveLo.value))
+            fn.write('#Upper wavelength (um):{}\n'.format(waveUp.value))
+            fn.write('#Inner annulus radius (arcsec):{}\n'.format(innerRadius.value))
+            fn.write('#Outer annulus radius (arcsec):{}\n'.format(outerRadius.value))
+            fn.write('#Wave (micron) Flux (Jy) Noise (Jy)\n')
 
             for w, s, e in zip(wvls[wv_region],spec[wv_region],sigma[wv_region]):
                 fn.write('{} {} {}\n'.format(w,s,e))
