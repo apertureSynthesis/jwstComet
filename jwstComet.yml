@@ -1,0 +1,14 @@
+name: jwstComet
+dependencies:
+ - python=3.11
+ - numpy
+ - pandas
+ - matplotlib
+ - astropy
+ - scipy
+ - pip
+ - pip:
+   - photutils
+   - ipython
+   - jupyter
+   - pylint
