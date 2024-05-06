@@ -7,7 +7,7 @@ class readHeader(object):
 
     def __init__(self, cubeFile):
         self.cubeFile = cubeFile
-        self.target, self.dateBeg, self.dateEnd, self.timeBeg, self.timeEnd = self.returnInfo()
+        self.target, self.dateBeg, self.dateEnd, self.timeBeg, self.timeEnd, self.grating, self.filter = self.returnInfo()
 
     def returnInfo(self):
         #Open the file and read the Primary header
@@ -27,7 +27,10 @@ class readHeader(object):
         dateEnd = timeStampEnd.split('T')[0]
         timeEnd = timeStampEnd.split('T')[1]
 
-        return target, dateBeg, dateEnd, timeBeg, timeEnd
+        grating = info['GRATING']
+        filter = info['FILTER']
+
+        return target, dateBeg, dateEnd, timeBeg, timeEnd, grating, filter
 
 
 

@@ -94,6 +94,7 @@ class azimuthal(object):
                 axes[1].set_xlabel('Wavelength ($\mu$m)')
                 axes[1].set_ylabel('Flux (Jy)')
                 axes[1].set_title('Extracted Spectrum for Cube #{}'.format(j))
+                axes[1].set_xlim(waveLo.value,waveUp.value)
                 plt.show()
             print(len(wvls),len(spec))
 
@@ -120,7 +121,8 @@ class azimuthal(object):
             fn.write('#Obs. End {} {}\n'.format(obsInfo.dateEnd,obsInfo.timeEnd))
             fn.write('#Lower wavelength (um) {}\n'.format(waveLo.value))
             fn.write('#Upper wavelength (um) {}\n'.format(waveUp.value))
-            fn.write('Center pixel for extract (x,y) = {},{}\n'.format(sciCube.xcenter,sciCube.ycenter))
+            fn.write('#Center pixel for extract (x,y) = ({},{})\n'.format(sciCube.xcenter,sciCube.ycenter))
+            fn.write('#Pixel scale (arcsec/pixel) {}\n'.format(psa.value))
             fn.write('#Inner annulus radius (arcsec) {}\n'.format(innerRadius.value))
             fn.write('#Outer annulus radius (arcsec) {}\n'.format(outerRadius.value))
             fn.write('#Wave (micron) Flux (Jy) Noise (Jy)\n')

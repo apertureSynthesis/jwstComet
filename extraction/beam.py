@@ -114,9 +114,11 @@ class beam(object):
             fn.write('#Target name {}\n'.format(obsInfo.target))
             fn.write('#Obs. Start {} {}\n'.format(obsInfo.dateBeg,obsInfo.timeBeg))
             fn.write('#Obs. End {} {}\n'.format(obsInfo.dateEnd,obsInfo.timeEnd))
+            fn.write('#Grating used {}/{}\n'.format(obsInfo.grating,obsInfo.filter))
             fn.write('#Lower wavelength (um) {}\n'.format(waveLo.value))
             fn.write('#Upper wavelength (um) {}\n'.format(waveUp.value))
-            fn.write('Center pixel for extract (x,y) = {},{}\n'.format(sciCube.xcenter,sciCube.ycenter))
+            fn.write('#Center pixel for extract (x,y) = {},{}\n'.format(sciCube.xcenter,sciCube.ycenter))
+            fn.write('#Pixel scale (arcsec/pixel) {}\n'.format(psa.value))
             fn.write('#Aperture radius (arcsec) {}\n'.format(radAp.value))
             fn.write('#X offset (arcsec) {}\n'.format(xOffset.value))
             fn.write('#Y offset (arcsec) {}\n'.format(yOffset.value))
@@ -126,7 +128,7 @@ class beam(object):
                 fn.write('{} {} {}\n'.format(w,s,e))
 
         #Plot the aperture if desired
-        if (withPlots and len(cubeFile) > 1):
+        if withPlots:
             fig, axes = plt.subplots(1,1,figsize=(10,10))
 
             axes.plot(wvls[wv_region],spec[wv_region])
