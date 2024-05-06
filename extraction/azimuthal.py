@@ -115,13 +115,14 @@ class azimuthal(object):
         obsInfo = readHeader(cubeFile[0])
         with open(specFile, 'w') as fn:
             #Create headers with extract information
-            fn.write('#Target name:{}\n'.format(obsInfo.target))
-            fn.write('#Obs. Start:{} {}\n'.format(obsInfo.dateBeg,obsInfo.timeBeg))
-            fn.write('#Obs. End:{} {}\n'.format(obsInfo.dateEnd,obsInfo.timeEnd))
-            fn.write('#Lower wavelength (um):{}\n'.format(waveLo.value))
-            fn.write('#Upper wavelength (um):{}\n'.format(waveUp.value))
-            fn.write('#Inner annulus radius (arcsec):{}\n'.format(innerRadius.value))
-            fn.write('#Outer annulus radius (arcsec):{}\n'.format(outerRadius.value))
+            fn.write('#Target name {}\n'.format(obsInfo.target))
+            fn.write('#Obs. Start {} {}\n'.format(obsInfo.dateBeg,obsInfo.timeBeg))
+            fn.write('#Obs. End {} {}\n'.format(obsInfo.dateEnd,obsInfo.timeEnd))
+            fn.write('#Lower wavelength (um) {}\n'.format(waveLo.value))
+            fn.write('#Upper wavelength (um) {}\n'.format(waveUp.value))
+            fn.write('Center pixel for extract (x,y) = {},{}\n'.format(sciCube.xcenter,sciCube.ycenter))
+            fn.write('#Inner annulus radius (arcsec) {}\n'.format(innerRadius.value))
+            fn.write('#Outer annulus radius (arcsec) {}\n'.format(outerRadius.value))
             fn.write('#Wave (micron) Flux (Jy) Noise (Jy)\n')
 
             for w, s, e in zip(wvls[wv_region],spec[wv_region],sigma[wv_region]):

@@ -96,7 +96,7 @@ class beam(object):
             combined_sigmas.append(sigma.tolist())
 
         if len(cubeFile) == 1:
-            wvls, spec, sigma = combined_waves[0], combined_specs[0], combined_sigmas[0]
+            wvls, spec, sigma = np.array(combined_waves[0]), np.array(combined_specs[0]), np.array(combined_sigmas[0])
         else:
             wvls, spec, sigma = subchannel_splice(combined_waves, combined_specs, combined_sigmas)
 
@@ -111,21 +111,22 @@ class beam(object):
         obsInfo = readHeader(cubeFile[0])
         with open(specFile, 'w') as fn:
             #Create headers with extract information
-            fn.write('#Target name:{}\n'.format(obsInfo.target))
-            fn.write('#Obs. Start:{} {}\n'.format(obsInfo.dateBeg,obsInfo.timeBeg))
-            fn.write('#Obs. End:{} {}\n'.format(obsInfo.dateEnd,obsInfo.timeEnd))
-            fn.write('#Lower wavelength (um):{}\n'.format(waveLo.value))
-            fn.write('#Upper wavelength (um):{}\n'.format(waveUp.value))
-            fn.write('#Aperture radius (arcsec):{}\n'.format(radAp.value))
-            fn.write('#X offset (arcsec):{}\n'.format(xOffset.value))
-            fn.write('#Y offset (arcsec):{}\n'.format(yOffset.value))
+            fn.write('#Target name {}\n'.format(obsInfo.target))
+            fn.write('#Obs. Start {} {}\n'.format(obsInfo.dateBeg,obsInfo.timeBeg))
+            fn.write('#Obs. End {} {}\n'.format(obsInfo.dateEnd,obsInfo.timeEnd))
+            fn.write('#Lower wavelength (um) {}\n'.format(waveLo.value))
+            fn.write('#Upper wavelength (um) {}\n'.format(waveUp.value))
+            fn.write('Center pixel for extract (x,y) = {},{}\n'.format(sciCube.xcenter,sciCube.ycenter))
+            fn.write('#Aperture radius (arcsec) {}\n'.format(radAp.value))
+            fn.write('#X offset (arcsec) {}\n'.format(xOffset.value))
+            fn.write('#Y offset (arcsec) {}\n'.format(yOffset.value))
             fn.write('#Wave (micron) Flux (Jy) Noise (Jy)\n')
 
             for w, s, e in zip(wvls[wv_region],spec[wv_region],sigma[wv_region]):
                 fn.write('{} {} {}\n'.format(w,s,e))
 
         #Plot the aperture if desired
-        if withPlots:
+        if (withPlots and len(cubeFile) > 1):
             fig, axes = plt.subplots(1,1,figsize=(10,10))
 
             axes.plot(wvls[wv_region],spec[wv_region])
