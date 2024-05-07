@@ -6,7 +6,7 @@ from astropy.io import fits
 from photutils.aperture import CircularAperture, CircularAnnulus, ApertureStats
 from jwstComet.utils import readCube, subchannel_splice, readHeader
 
-class azimuthal(object):
+class Azimuthal(object):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

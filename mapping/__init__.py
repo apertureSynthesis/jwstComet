@@ -1,3 +1,3 @@
 ## init.py
 
-from .map import *
+from .Mapping import *

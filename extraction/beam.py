@@ -5,7 +5,7 @@ from astropy.io import fits
 from photutils.aperture import CircularAperture, aperture_photometry
 from jwstComet.utils import readCube, subchannel_splice, readHeader
 
-class beam(object):
+class Beam(object):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
