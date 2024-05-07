@@ -12,7 +12,7 @@ class beam(object):
 
 
     @u.quantity_input(waveLo=u.um, waveUp=u.um, radAp=u.arcsec, xOffset=u.arcsec, yOffset=u.arcsec)
-    def extractSpec(self,cubeFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,withPlots=False):
+    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,withPlots=False):
         """
         Extract a spectrum at the specified position and save it to a text file.
         Plot the aperture and extracted spectrum if desired
@@ -28,9 +28,9 @@ class beam(object):
         combined_specs = []
         combined_sigmas = []
 
-        for j in range(len(cubeFile)):
+        for j in range(len(cubeFiles)):
             #Read in the file and get relevant information and data
-            sciCube = readCube(cubeFile[j])
+            sciCube = readCube(cubeFiles[j])
             #Data
             data = sciCube.data
             #Noise
@@ -78,7 +78,7 @@ class beam(object):
                 sigma[i] = noise_jy.value
 
             if withPlots:
-                fig, axes = plt.subplots(1,2,figsize=(20,10))
+                fig, axes = plt.subplots(1,2)
                 fig.subplots_adjust(hspace=0.45,wspace=0.15)
                 axes[0].imshow(sciCube.cdata,origin='lower',cmap='viridis',interpolation='none')
                 axes[0].plot(sciCube.xcenter,sciCube.ycenter,marker='+',markersize=8,color='r')
@@ -95,7 +95,7 @@ class beam(object):
             combined_specs.append(spec.tolist())
             combined_sigmas.append(sigma.tolist())
 
-        if len(cubeFile) == 1:
+        if len(cubeFiles) == 1:
             wvls, spec, sigma = np.array(combined_waves[0]), np.array(combined_specs[0]), np.array(combined_sigmas[0])
         else:
             wvls, spec, sigma = subchannel_splice(combined_waves, combined_specs, combined_sigmas)
@@ -106,9 +106,8 @@ class beam(object):
         wv_region = np.where((wvls>waveLo.value) & (wvls<waveUp.value))
 
         #Save to a file
-        specFile = 'JWST-Extract-{:.2f}-arcsecRadAp-{:.1f}-arcsecXoff-{:.1f}-arcsecYoff-{:.2f}um-to-{:.2f}um.txt'.format(radAp.value,xOffset.value,yOffset.value,waveLo.value,waveUp.value)
         #Get header observation information
-        obsInfo = readHeader(cubeFile[0])
+        obsInfo = readHeader(cubeFiles[0])
         with open(specFile, 'w') as fn:
             #Create headers with extract information
             fn.write('#Target name {}\n'.format(obsInfo.target))
@@ -129,7 +128,7 @@ class beam(object):
 
         #Plot the aperture if desired
         if withPlots:
-            fig, axes = plt.subplots(1,1,figsize=(10,10))
+            fig, axes = plt.subplots(1,1)
 
             axes.plot(wvls[wv_region],spec[wv_region])
             axes.set_xlabel('Wavelength ($\mu$m)')
