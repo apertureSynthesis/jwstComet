@@ -2,7 +2,7 @@ import os,sys
 import numpy as np
 from datetime import datetime
 
-def ephCFG(specFile,name,objectType,midtime,delta):
+def ephCFG(specFile,name,objectType,midtime,delta,key=None):
     """
     Writes a CFG file that will request the PSG to return an updated CFG with ephemeris information. 
     This will be used in the next step to either run a forward model of a retrieval.
@@ -21,9 +21,12 @@ def ephCFG(specFile,name,objectType,midtime,delta):
         fn.write('<GEOMETRY-ALTITUDE-UNIT>AU\n')
 
     #Send it to the PSG
-    os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y -d wcon=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(cfgName,ephName))
+    if key == None:
+        os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y -d wcon=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(cfgName,ephName))
+    else:
+        os.system('curl -d key={} -d type=cfg -d wgeo=y -d wephm=y -d watm=y -d wcon=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(key,cfgName,ephName))
 
-def atmCFG(specFile, composition, retrieval, mode):
+def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
 
     #Read in the extracted spectrum
     wave, spec, err = np.loadtxt(specFile, unpack=1)
@@ -73,7 +76,6 @@ def atmCFG(specFile, composition, retrieval, mode):
 
     #Read in the CFG file and update it to fit our desired atmosphere and retrieval parameters
     retName = specFile[:-3]+'ret.cfg'
-    resName = specFile[:-3]+'ret-results.txt'
     os.system('cp {} {}'.format(specFile[:-3]+'atm.cfg',retName))
     with open(specFile[:-3]+'atm.cfg') as an:
         with open(retName, 'w') as fn:
@@ -105,6 +107,7 @@ def atmCFG(specFile, composition, retrieval, mode):
                     units = [composition[i]['unit'] for i in gases]
                     unit_list = ','.join(units)
                     modified_line = '<ATMOSPHERE-UNIT>{}\n'.format(unit_list)
+                    fn.write(modified_line)
                 elif '<ATMOSPHERE-TAU>' in line:
                     if composition['Solar Activity'] == 'active':
                         lifetimes = [str(solar_lifetimes[i]['active']) for i in gases]
@@ -135,8 +138,6 @@ def atmCFG(specFile, composition, retrieval, mode):
                     if '#Grating used' in line:
                         grating_filter = line.split()[-1]
                         res_element = 0.5*(resolution[grating_filter]['low'] + resolution[grating_filter]['high'])
-                        fn.write('<GENERATOR-RESOLUTION>{}\n'.format(res_element))
-                        fn.write('<GENERATOR-RESOLUTIONUNIT>um\n')
                     if '#Pixel scale (arcsec/pixel)' in line:
                         psa = float(line.split()[-1])
                     if '#Aperture radius (arcsec)' in line:
@@ -166,8 +167,10 @@ def atmCFG(specFile, composition, retrieval, mode):
                     outerRadius = float(line.split()[-1])
                 if innerRadius == 0:
                     fn.write('<GENERATOR-BEAM>{}\n'.format(2*outerRadius))
+                    fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 else:
                     fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(psa,outerRadius - innerRadius))
+                    fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 fn.write('<GEOMETRY-OFFSET-NS>0\n')
                 fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(0.5*(innerRadius + outerRadius)))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')                    
@@ -195,9 +198,11 @@ def atmCFG(specFile, composition, retrieval, mode):
                 fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
             fn.write('</DATA>\n')
 
-        #Send it to the PSG
-    os.system('curl -d type=ret --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(retName,resName))
-
+    #Send it to the PSG
+    if key == None:
+        os.system('curl -d type=ret --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(retName,resFile))
+    else:
+        os.system('curl -d key={} -d type=ret --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(key,retName,resFile))
 
 
     

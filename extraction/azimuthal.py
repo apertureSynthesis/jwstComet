@@ -12,7 +12,7 @@ class azimuthal(object):
         super().__init__(*args, **kwargs)
 
     @u.quantity_input(waveLo = u.um, waveUp = u.um, innerRadius = u.arcsec, outerRadius = u.arcsec)
-    def extractSpec(self,cubeFile,waveLo,waveUp,innerRadius=0.0*u.arcsec,outerRadius=0.1*u.arcsec,withPlots=False):
+    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,innerRadius=0.0*u.arcsec,outerRadius=0.1*u.arcsec,withPlots=False):
         """
         Extract a spectrum within a specified annulus, take the azimuthal average, and save it to a text file.
         Plot the aperture and extracted spectrum if desired.
@@ -34,10 +34,10 @@ class azimuthal(object):
         combined_specs = []
         combined_sigmas = []
 
-        for j in range(len(cubeFile)):
+        for j in range(len(cubeFiles)):
 
             #Read in the file and get relevant information and data
-            sciCube = readCube(cubeFile[j])
+            sciCube = readCube(cubeFiles[j])
             data = sciCube.data
             derr = sciCube.derr
             dnpts = data.shape[0]
@@ -83,7 +83,7 @@ class azimuthal(object):
                 sigma[i] = noise_jy.value
 
             if withPlots:
-                fig, axes = plt.subplots(1,2,figsize=(20,10))
+                fig, axes = plt.subplots(1,2)
                 fig.subplots_adjust(hspace=0.45,wspace=0.15)
                 axes[0].imshow(sciCube.cdata,origin='lower',cmap='viridis',interpolation='none')
                 axes[0].plot(sciCube.xcenter,sciCube.ycenter,marker='+',markersize=8,color='r')
@@ -94,16 +94,15 @@ class azimuthal(object):
                 axes[1].set_xlabel('Wavelength ($\mu$m)')
                 axes[1].set_ylabel('Flux (Jy)')
                 axes[1].set_title('Extracted Spectrum for Cube #{}'.format(j))
-                axes[1].set_xlim(waveLo.value,waveUp.value)
                 plt.show()
-            print(len(wvls),len(spec))
 
             combined_waves.append(wvls.tolist())
             combined_specs.append(spec.tolist())
             combined_sigmas.append(sigma.tolist())
 
-        if len(cubeFile) == 1:
-            wvls, spec, sigma = combined_waves[0], combined_specs[0], combined_sigmas[0]
+
+        if len(cubeFiles) == 1:
+            wvls, spec, sigma = np.array(combined_waves[0]), np.array(combined_specs[0]), np.array(combined_sigmas[0])
         else:
             wvls, spec, sigma = subchannel_splice(combined_waves, combined_specs, combined_sigmas)
 
@@ -111,14 +110,14 @@ class azimuthal(object):
         wv_region = np.where((wvls>waveLo.value) & (wvls<waveUp.value))
 
         #Save the file
-        specFile = 'JWST-Extract-{:.2f}-arcsecInnerRadius-{:.2f}-arcsecOuterRadius-{:.2f}um-to-{:.2f}um.txt'.format(innerRadius.value,outerRadius.value,waveLo.value,waveUp.value)
         #Get header observation information
-        obsInfo = readHeader(cubeFile[0])
+        obsInfo = readHeader(cubeFiles[0])
         with open(specFile, 'w') as fn:
             #Create headers with extract information
             fn.write('#Target name {}\n'.format(obsInfo.target))
             fn.write('#Obs. Start {} {}\n'.format(obsInfo.dateBeg,obsInfo.timeBeg))
             fn.write('#Obs. End {} {}\n'.format(obsInfo.dateEnd,obsInfo.timeEnd))
+            fn.write('#Grating used {}/{}\n'.format(obsInfo.grating,obsInfo.filter))
             fn.write('#Lower wavelength (um) {}\n'.format(waveLo.value))
             fn.write('#Upper wavelength (um) {}\n'.format(waveUp.value))
             fn.write('#Center pixel for extract (x,y) = ({},{})\n'.format(sciCube.xcenter,sciCube.ycenter))
@@ -132,7 +131,7 @@ class azimuthal(object):
 
         #Plot the aperture if desired
         if withPlots:
-            fig, axes = plt.subplots(1,1,figsize=(10,10))
+            fig, axes = plt.subplots(1,1)
 
             axes.plot(wvls[wv_region],spec[wv_region])
             axes.set_xlabel('Wavelength ($\mu$m)')

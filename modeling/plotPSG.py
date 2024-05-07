@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plotPSG(retFile,withPlots):
+def makePlots(retFile,withPlots):
     """
     Reads a PSG retrieval result file. Provides a model-data comparison plot if desired
     """

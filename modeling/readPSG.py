@@ -3,12 +3,12 @@ class readPSG(object):
     Read a PSG returned retrieval file
     """
 
-    def __init__(self, resName):
-        self.resName = resName
+    def __init__(self, resFile):
+        self.resFile = resFile
         self.retrieval_variables, self.retrieval_values, self.retrieval_sigmas = self.readResults()
 
     def readResults(self):
-        with open(self.resName, 'r') as fn:
+        with open(self.resFile, 'r') as fn:
             for index, line in enumerate(fn):
                 #Read through and search for the retrieved variables, values, and sigmas
                 if '<RETRIEVAL-VARIABLES>' in line:
