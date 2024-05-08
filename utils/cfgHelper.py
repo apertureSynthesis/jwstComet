@@ -71,7 +71,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
 
     #Add the retrieval parameters
     ret_keys = list(retrieval.keys())
-    ret_vars = ret_keys[9:]
+    ret_vars = ret_keys[10:]
     n_vars = len(ret_vars)
 
     #Read in the CFG file and update it to fit our desired atmosphere and retrieval parameters
@@ -195,7 +195,10 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
             fn.write('<RETRIEVAL-UNITS>{}\n'.format(','.join([retrieval[i]['unit'] for i in ret_vars])))
             fn.write('<DATA>\n')
             for i in range(len(wave)):
-                fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
+                if retrieval['COMA-OPACITY'] == 'thin':
+                    fn.write('{} {} {}\n'.format(wave[i],spec[i]/100.,err[i]/100.))
+                else:
+                    fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
             fn.write('</DATA>\n')
 
     #Send it to the PSG
