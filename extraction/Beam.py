@@ -1,3 +1,4 @@
+
 import numpy as np
 import astropy.units as u
 import matplotlib.pyplot as plt
@@ -79,7 +80,7 @@ class Beam(object):
 
             if withPlots:
                 fig, axes = plt.subplots(1,2)
-                fig.subplots_adjust(hspace=0.45,wspace=0.15)
+                fig.subplots_adjust(hspace=0.45,wspace=0.45)
                 axes[0].imshow(sciCube.cdata,origin='lower',cmap='viridis',interpolation='none')
                 axes[0].plot(sciCube.xcenter,sciCube.ycenter,marker='+',markersize=8,color='r')
                 axes[0].set_title('Extraction Region for Cube #{}'.format(j))
@@ -113,7 +114,7 @@ class Beam(object):
             fn.write('#Target name {}\n'.format(obsInfo.target))
             fn.write('#Obs. Start {} {}\n'.format(obsInfo.dateBeg,obsInfo.timeBeg))
             fn.write('#Obs. End {} {}\n'.format(obsInfo.dateEnd,obsInfo.timeEnd))
-            fn.write('#Grating used {}/{}\n'.format(obsInfo.grating,obsInfo.filter))
+            fn.write('#Grating used {}\n'.format(obsInfo.setting))
             fn.write('#Lower wavelength (um) {}\n'.format(waveLo.value))
             fn.write('#Upper wavelength (um) {}\n'.format(waveUp.value))
             fn.write('#Center pixel for extract (x,y) = {},{}\n'.format(sciCube.xcenter,sciCube.ycenter))
@@ -133,5 +134,5 @@ class Beam(object):
             axes.plot(wvls[wv_region],spec[wv_region])
             axes.set_xlabel('Wavelength ($\mu$m)')
             axes.set_ylabel('Flux (Jy)')
-            axes.set_title('Spliced Extracted Spectrum')
+            axes.set_title('Extracted Spectrum for {:.2f} radius aperture\n xOffset = {:.2f}, yOffset = {:.2f}'.format(radAp,xOffset,yOffset))
             plt.show()
