@@ -66,7 +66,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
 
     atm_keys = list(composition.keys())
 
-    gases = atm_keys[3:]
+    gases = atm_keys[4:]
     n_gas = len(gases)
 
     #Add the retrieval parameters
@@ -119,12 +119,17 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
                     lifetime_list = ','.join(lifetimes)
                     modified_line = '<ATMOSPHERE-TAU>{}\n'.format(lifetime_list)
                     fn.write(modified_line)
+                elif '<SURFACE-GAS-RATIO>' in line:
+                    modified_line = '<SURFACE-GAS-RATIO>{}\n'.format(composition['SURFACE-GAS-RATIO']['value'])
+                    fn.write(modified_line)
+                elif '<SURFACE-GAS-UNIT>' in line:
+                    modified_line = '<SURFACE-GAS-UNIT>{}\n'.format(composition['SURFACE-GAS-RATIO']['value'])
+                    fn.write(modified_line)
                 else:
                     fn.write(line)
 
             #Finish adding the continuum properties
             fn.write('<ATMOSPHERE-CONTINUUM>Rayleigh,Refraction,CIA_all,UV_all\n')
-            fn.write('<SURFACE-GAS-UNIT>ratio\n')
 
             #Add in properties for JWST
             fn.write('<GENERATOR-TELESCOPE>SINGLE\n')
