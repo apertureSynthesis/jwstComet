@@ -7,7 +7,7 @@ class readHeader(object):
 
     def __init__(self, cubeFile):
         self.cubeFile = cubeFile
-        self.target, self.dateBeg, self.dateEnd, self.timeBeg, self.timeEnd, self.setting = self.returnInfo()
+        self.target, self.dateBeg, self.dateEnd, self.timeBeg, self.timeEnd, self.instrument, self.setting = self.returnInfo()
 
     def returnInfo(self):
         #Open the file and read the Primary header
@@ -41,9 +41,9 @@ class readHeader(object):
             channel = info['CHANNEL']
             band = info['BAND']
 
-            setting = detector+'/'+channel+'/'+band
+            setting = channel+'/'+band.strip()
 
-        return target, dateBeg, dateEnd, timeBeg, timeEnd, setting
+        return target, dateBeg, dateEnd, timeBeg, timeEnd, instrument, setting
 
 
 

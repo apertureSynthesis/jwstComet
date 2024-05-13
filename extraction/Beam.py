@@ -13,7 +13,7 @@ class Beam(object):
 
 
     @u.quantity_input(waveLo=u.um, waveUp=u.um, radAp=u.arcsec, xOffset=u.arcsec, yOffset=u.arcsec)
-    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,withPlots=False):
+    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,mask=None,withPlots=False):
         """
         Extract a spectrum at the specified position and save it to a text file.
         Plot the aperture and extracted spectrum if desired
@@ -106,6 +106,15 @@ class Beam(object):
         #Only extract the wavelength region of interest
         wv_region = np.where((wvls>waveLo.value) & (wvls<waveUp.value))
 
+        #Mask pixels with very large sigma if requested
+        if mask != None:
+            mask_keys = list(mask.keys())
+            for key in range(len(mask_keys)):
+                maskLo = mask[mask_keys[key]]['start']
+                maskUp = mask[mask_keys[key]]['stop']
+                mask_region = np.where((wvls>maskLo.value) & (wvls<maskUp.value))
+                sigma[mask_region] *= 1e25
+
         #Save to a file
         #Get header observation information
         obsInfo = readHeader(cubeFiles[0])
@@ -114,9 +123,11 @@ class Beam(object):
             fn.write('#Target name {}\n'.format(obsInfo.target))
             fn.write('#Obs. Start {} {}\n'.format(obsInfo.dateBeg,obsInfo.timeBeg))
             fn.write('#Obs. End {} {}\n'.format(obsInfo.dateEnd,obsInfo.timeEnd))
+            fn.write('#Instrument used {}\n'.format(obsInfo.instrument))
             fn.write('#Grating used {}\n'.format(obsInfo.setting))
             fn.write('#Lower wavelength (um) {}\n'.format(waveLo.value))
             fn.write('#Upper wavelength (um) {}\n'.format(waveUp.value))
+            fn.write('#Spectral plate scale (um) {}\n'.format(dwv))
             fn.write('#Center pixel for extract (x,y) = {},{}\n'.format(sciCube.xcenter,sciCube.ycenter))
             fn.write('#Pixel scale (arcsec/pixel) {}\n'.format(psa.value))
             fn.write('#Aperture radius (arcsec) {}\n'.format(radAp.value))
@@ -131,7 +142,7 @@ class Beam(object):
         if withPlots:
             fig, axes = plt.subplots(1,1)
 
-            axes.plot(wvls[wv_region],spec[wv_region])
+            axes.errorbar(wvls[wv_region],spec[wv_region],sigma[wv_region]/1e23,ecolor='r')
             axes.set_xlabel('Wavelength ($\mu$m)')
             axes.set_ylabel('Flux (Jy)')
             axes.set_title('Extracted Spectrum for {:.2f} radius aperture\n xOffset = {:.2f}, yOffset = {:.2f}'.format(radAp,xOffset,yOffset))

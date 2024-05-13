@@ -50,23 +50,39 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
         'CN':       {'quiet': '1.3e4 2.1e5', 'active': '1.3e4 2.1e5'}
     }
 
-    #Dictionary of spectral resolutions
-    resolution = {
-        'PRISM/CLEAR':  {'low': 0.60/30., 'high': 5.30/330.},
-        'G140M/F070LP': {'low': 0.70/500., 'high': 1.26/898.},
-        'G140M/F100LP': {'low': 0.98/699., 'high': 1.88/1343.},
-        'G235M/F170LP': {'low': 1.70/722., 'high': 3.15/1342.},
-        'G395M/F290LP': {'low': 2.88/728., 'high': 5.20/1317.},
-        'G140H/F070LP': {'low': 0.70/1321., 'high': 1.26/2395.},
-        'G140H/F100LP': {'low': 0.98/1849., 'high': 1.87/3675.},
-        'G235H/F170LP': {'low': 1.70/1911., 'high': 3.15/3690.},
-        'G395H/F290LP': {'low': 2.88/1927., 'high': 5.20/3613.}
-    }
+    # #Dictionary of spectral resolutions
+    # resolution = {
+    #     'NIRSPEC':{
+    #         'PRISM/CLEAR':  {'low': 0.60/30., 'high': 5.30/330.},
+    #         'G140M/F070LP': {'low': 0.70/500., 'high': 1.26/898.},
+    #         'G140M/F100LP': {'low': 0.98/699., 'high': 1.88/1343.},
+    #         'G235M/F170LP': {'low': 1.70/722., 'high': 3.15/1342.},
+    #         'G395M/F290LP': {'low': 2.88/728., 'high': 5.20/1317.},
+    #         'G140H/F070LP': {'low': 0.70/1321., 'high': 1.26/2395.},
+    #         'G140H/F100LP': {'low': 0.98/1849., 'high': 1.87/3675.},
+    #         'G235H/F170LP': {'low': 1.70/1911., 'high': 3.15/3690.},
+    #         'G395H/F290LP': {'low': 2.88/1927., 'high': 5.20/3613.}
+    #     },
+    #     'MIRI':{
+    #         '1/SHORT': 0.0009,
+    #         '1/MEDIUM': 0.0011,
+    #         '1/LONG': 0.0012,
+    #         '2/SHORT': 0.0014,
+    #         '2/MEDIUM': 0.0016,
+    #         '2/LONG': 0.0019,
+    #         '3/SHORT': 0.0021,
+    #         '3/MEDIUM': 0.0025,
+    #         '3/LONG': 0.0029,
+    #         '4/SHORT': 0.0035,
+    #         '4/MEDIUM': 0.0042,
+    #         '4/LONG': 0.0049
+    #     }
+    # }
 
 
     atm_keys = list(composition.keys())
 
-    gases = atm_keys[4:]
+    gases = atm_keys[7:]
     n_gas = len(gases)
 
     #Add the retrieval parameters
@@ -125,11 +141,21 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
                 elif '<SURFACE-GAS-UNIT>' in line:
                     modified_line = '<SURFACE-GAS-UNIT>{}\n'.format(composition['SURFACE-GAS-RATIO']['value'])
                     fn.write(modified_line)
+                elif '<SURFACE-TEMPERATURE>' in line:
+                    modified_line = '<SURFACE-TEMPERATURE>{}\n'.format(composition['SURFACE-TEMPERATURE']['value'])
+                    fn.write(modified_line)
+                elif '<SURFACE-ALBEDO>' in line:
+                    modified_line = '<SURFACE-ALBEDO>{}\n'.format(composition['SURFACE-ALBEDO']['value'])
+                    fn.write(modified_line)
+                elif '<SURFACE-EMISSIVITY>' in line:
+                    modified_line = '<SURFACE-EMISSIVITY>{}\n'.format(composition['SURFACE-EMISSIVITY']['value'])
+                    fn.write(modified_line)
                 else:
                     fn.write(line)
 
             #Finish adding the continuum properties
             fn.write('<ATMOSPHERE-CONTINUUM>Rayleigh,Refraction,CIA_all,UV_all\n')
+            fn.write('<SURFACE-GAS-UNIT>{}\n'.format(composition['SURFACE-GAS-RATIO']['unit']))
 
             #Add in properties for JWST
             fn.write('<GENERATOR-TELESCOPE>SINGLE\n')
@@ -140,9 +166,8 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
             fn.write('<GENERATOR-RANGE2>{}\n'.format(wave[-1]))
             with open(specFile) as sf:
                 for _, line in enumerate(sf):
-                    if '#Grating used' in line:
-                        grating_filter = line.split()[-1]
-                        res_element = 0.5*(resolution[grating_filter]['low'] + resolution[grating_filter]['high'])
+                    if '#Spectral plate scale (um)' in line:
+                        res_element = line.split()[-1]
                     if '#Pixel scale (arcsec/pixel)' in line:
                         psa = float(line.split()[-1])
                     if '#Aperture radius (arcsec)' in line:
@@ -177,7 +202,10 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
                     fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(psa,outerRadius - innerRadius))
                     fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 fn.write('<GEOMETRY-OFFSET-NS>0\n')
-                fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(0.5*(innerRadius + outerRadius)))
+                if innerRadius == 0:
+                    fn.write('<GEOMETRY-OFFSET-EW>0\n')
+                else:
+                    fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(0.5*(innerRadius + outerRadius)))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')                    
 
             #Hard code some retrieval preferences, make room to update later
