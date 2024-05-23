@@ -74,10 +74,15 @@ class Azimuthal(object):
             for i in range(dnpts):
                 sci_img = data[i,:,:]*u.MJy/u.sr
                 err_img = derr[i,:,:]*u.MJy/u.sr
-                apPhot = ApertureStats(data = sci_img, aperture = apEx, error = err_img, sum_method='subpixel', subpixels=5)
+                wgt_img = 1./(err_img**2)
+                #Take the weighted average: Sum(w_i * x_i) / Sum(w_i), w_i = 1/noise_i^2
+                #Uncertainty in weighted average: 1 / sqrt(Sum(w_i))
+                #Taylor, An Introduction to Error Analysis
+                apPhot = ApertureStats(data = sci_img*wgt_img, aperture = apEx, sum_method='subpixel', subpixels=5)
+                wtPhot = ApertureStats(data = wgt_img, aperture = apEx, sum_method='subpixel', subpixels=5)
 
-                flux_jy = (apPhot.mean*psrScale).to(u.Jy/u.pixel)
-                noise_jy = (apPhot.std*psrScale/np.sqrt(apPhot.sum_aper_area.value)).to(u.Jy/u.pixel)
+                flux_jy = ((apPhot.sum / wtPhot.sum)*psrScale).to(u.Jy/u.pixel)
+                noise_jy = ((1./np.sqrt(wtPhot.sum))*psrScale).to(u.Jy/u.pixel)
 
                 spec[i] = flux_jy.value
                 sigma[i] = noise_jy.value
@@ -145,7 +150,7 @@ class Azimuthal(object):
         if withPlots:
             fig, axes = plt.subplots(1,1)
 
-            axes.errorbar(wvls[wv_region],spec[wv_region],sigma[wv_region]/1e23,ecolor='r')
+            axes.errorbar(wvls[wv_region],spec[wv_region],sigma[wv_region],ecolor='r')
             axes.set_xlabel('Wavelength ($\mu$m)')
             axes.set_ylabel('Flux (Jy)')
             axes.set_title('Spliced Extracted Spectrum')
