@@ -26,9 +26,9 @@ class runPSG(object):
 
         #Run an ephemeris and get pertinent information
         #Find the midpoint of the observations
-        obj = Horizons(id = name, id_type = None, location='@JWST',
+        obj = Horizons(id = name, id_type = 'designation', location='@JWST',
                        epochs = {'start':dateBeg, 'stop':dateEnd, 'step':'1m'})
-        eph = obj.ephemerides(quantities = '19,20,23,24')
+        eph = obj.ephemerides(quantities = '19,20,23,24', no_fragments=True, closest_apparition=True)
 
         df_eph = eph.to_pandas()
 

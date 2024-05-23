@@ -17,14 +17,14 @@ def ephCFG(specFile,name,objectType,midtime,delta,key=None):
         fn.write('<OBJECT-NAME>{}\n'.format(name))
         fn.write('<OBJECT-DATE>{}\n'.format(datetime.strptime(midtime, "%Y-%b-%d %H:%M:%S.%f").strftime("%Y/%m/%d %H:%M")))
         fn.write('<GEOMETRY>Observatory\n')
-        fn.write('<GEOMETRY-OBS-ALTITUDE>{}\n'.format(delta))
-        fn.write('<GEOMETRY-ALTITUDE-UNIT>AU\n')
+        #fn.write('<GEOMETRY-OBS-ALTITUDE>{}\n'.format(delta))
+        #fn.write('<GEOMETRY-ALTITUDE-UNIT>AU\n')
 
     #Send it to the PSG
     if key == None:
-        os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y -d wcon=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(cfgName,ephName))
+        os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(cfgName,ephName))
     else:
-        os.system('curl -d key={} -d type=cfg -d wgeo=y -d wephm=y -d watm=y -d wcon=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(key,cfgName,ephName))
+        os.system('curl -d key={} -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(key,cfgName,ephName))
 
 def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
 
@@ -47,7 +47,8 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
         'CH3OH_V9': {'quiet': 8.787e4, 'active': 4.816e4},
         'NH3':      {'quiet': 5.658e3, 'active': 5.022e3},
         'C2H2':     {'quiet': 3.269e4, 'active': 1.691e4},
-        'CN':       {'quiet': '1.3e4 2.1e5', 'active': '1.3e4 2.1e5'}
+        'CN':       {'quiet': '1.3e4 2.1e5', 'active': '1.3e4 2.1e5'},
+        'NH2':      {'quiet': '4.1e3 6.2e4', 'active': '4.1e3 6.2e4'}
     }
 
     # #Dictionary of spectral resolutions
@@ -82,7 +83,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
 
     atm_keys = list(composition.keys())
 
-    gases = atm_keys[7:]
+    gases = atm_keys[8:]
     n_gas = len(gases)
 
     #Add the retrieval parameters
@@ -150,6 +151,8 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
                 elif '<SURFACE-EMISSIVITY>' in line:
                     modified_line = '<SURFACE-EMISSIVITY>{}\n'.format(composition['SURFACE-EMISSIVITY']['value'])
                     fn.write(modified_line)
+                elif '<OBJECT-DIAMETER>' in line:
+                    continue
                 else:
                     fn.write(line)
 
@@ -206,7 +209,9 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
                     fn.write('<GEOMETRY-OFFSET-EW>0\n')
                 else:
                     fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(0.5*(innerRadius + outerRadius)))
-                fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')                    
+                fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')    
+
+            fn.write('<OBJECT-DIAMETER>{}\n'.format(composition['DIAMETER']['value']))                
 
             #Hard code some retrieval preferences, make room to update later
             fn.write('<RETRIEVAL-GAMMA>{}\n'.format(retrieval['GAMMA']))
