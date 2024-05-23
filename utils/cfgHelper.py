@@ -164,17 +164,27 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
             fn.write('<GENERATOR-TELESCOPE>SINGLE\n')
             fn.write('<GENERATOR-DIAMTELE>5.64\n')
 
+            #Add in flux and modeling properties
+            fn.write('<GENERATOR-GAS-MODEL>Y\n')
+            fn.write('<GENERATOR-CONT-MODEL>Y\n')
+            fn.write('<GENERATOR-CONT-STELLAR>Y\n')
+            fn.write('<GENERATOR-RADUNITS>Jy\n')
+            fn.write('<GENERATOR-TRANS-APPLY>N\n')
+            fn.write('<GENERATOR-RESOLUTIONKERNEL>N\n')
+            fn.write('GENERATOR-TRANS>02-01\n')
+
+
             #Add in geometric factors such as offsets and wavelength ranges
             fn.write('<GENERATOR-RANGE1>{}\n'.format(wave[0]))
             fn.write('<GENERATOR-RANGE2>{}\n'.format(wave[-1]))
             with open(specFile) as sf:
                 for _, line in enumerate(sf):
                     if '#Spectral plate scale (um)' in line:
-                        res_element = line.split()[-1]
+                        res_element = float(line.split()[-1])
                     if '#Pixel scale (arcsec/pixel)' in line:
                         psa = float(line.split()[-1])
                     if '#Aperture radius (arcsec)' in line:
-                        radAp = line.split()[-1]
+                        radAp = float(line.split()[-1])
                     if '#X offset (arcsec)' in line:
                         xOffset = float(line.split()[-1])
                     if '#Y offset (arcsec)' in line:
@@ -186,7 +196,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
             fn.write('<GENERATOR-RESOLUTION>{}\n'.format(res_element))
             fn.write('<GENERATOR-RESOLUTIONUNIT>um\n')
             if mode == 'beam':
-                fn.write('<GENERATOR-BEAM>{}\n'.format(radAp))
+                fn.write('<GENERATOR-BEAM>{}\n'.format(2*radAp))
                 fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset * psa))
                 fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset * psa))
@@ -233,10 +243,13 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
             fn.write('<RETRIEVAL-UNITS>{}\n'.format(','.join([retrieval[i]['unit'] for i in ret_vars])))
             fn.write('<DATA>\n')
             for i in range(len(wave)):
-                if retrieval['COMA-OPACITY'] == 'thin':
-                    fn.write('{} {} {}\n'.format(wave[i],spec[i]/100.,err[i]/100.))
+                if not np.isnan(spec[i]):
+                    if retrieval['COMA-OPACITY'] == 'thin':
+                        fn.write('{} {} {}\n'.format(wave[i],spec[i]/100.,err[i]/100.))
+                    else:
+                        fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
                 else:
-                    fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
+                    continue
             fn.write('</DATA>\n')
 
     #Send it to the PSG

@@ -142,7 +142,7 @@ class Beam(object):
         if withPlots:
             fig, axes = plt.subplots(1,1)
 
-            axes.errorbar(wvls[wv_region],spec[wv_region],sigma[wv_region]/1e23,ecolor='r')
+            axes.errorbar(wvls[wv_region],spec[wv_region],sigma[wv_region],ecolor='r')
             axes.set_xlabel('Wavelength ($\mu$m)')
             axes.set_ylabel('Flux (Jy)')
             axes.set_title('Extracted Spectrum for {:.2f} radius aperture\n xOffset = {:.2f}, yOffset = {:.2f}'.format(radAp,xOffset,yOffset))
