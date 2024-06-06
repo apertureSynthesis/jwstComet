@@ -10,7 +10,7 @@ class runPSG(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def getModels(self, specFile, resFile, name, objectType, composition=None, retrieval=None, mode=None, withPlots=False, key=None):
+    def getModels(self, specFile, resFile, name, objectType, composition=None, retrieval=None, mode=None, withCont=False, withPlots=False, key=None):
 
         wave  = []
         spec  = []
@@ -40,7 +40,7 @@ class runPSG(object):
         cfgHelper.ephCFG(specFile,name,objectType,midtime,delta,key)
 
         if retrieval != None:
-            cfgHelper.atmCFG(specFile,resFile,composition,retrieval,mode,key)
+            cfgHelper.atmCFG(specFile,resFile,composition,retrieval,mode,withCont,key)
 
         if withPlots:
             plotPSG.makePlots(resFile,withPlots)

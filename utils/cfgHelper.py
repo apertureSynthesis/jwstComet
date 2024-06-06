@@ -1,6 +1,7 @@
 import os,sys
 import numpy as np
 from datetime import datetime
+import pandas as pd
 
 def ephCFG(specFile,name,objectType,midtime,delta,key=None):
     """
@@ -26,10 +27,11 @@ def ephCFG(specFile,name,objectType,midtime,delta,key=None):
     else:
         os.system('curl -d key={} -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(key,cfgName,ephName))
 
-def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
+def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, key=None):
 
-    #Read in the extracted spectrum
+    #Read in the data file
     wave, spec, err = np.loadtxt(specFile, unpack=1)
+
 
     #Dictionary of solar photolysis lifetimes
     solar_lifetimes = {
@@ -51,34 +53,34 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
         'NH2':      {'quiet': '4.1e3 6.2e4', 'active': '4.1e3 6.2e4'}
     }
 
-    # #Dictionary of spectral resolutions
-    # resolution = {
-    #     'NIRSPEC':{
-    #         'PRISM/CLEAR':  {'low': 0.60/30., 'high': 5.30/330.},
-    #         'G140M/F070LP': {'low': 0.70/500., 'high': 1.26/898.},
-    #         'G140M/F100LP': {'low': 0.98/699., 'high': 1.88/1343.},
-    #         'G235M/F170LP': {'low': 1.70/722., 'high': 3.15/1342.},
-    #         'G395M/F290LP': {'low': 2.88/728., 'high': 5.20/1317.},
-    #         'G140H/F070LP': {'low': 0.70/1321., 'high': 1.26/2395.},
-    #         'G140H/F100LP': {'low': 0.98/1849., 'high': 1.87/3675.},
-    #         'G235H/F170LP': {'low': 1.70/1911., 'high': 3.15/3690.},
-    #         'G395H/F290LP': {'low': 2.88/1927., 'high': 5.20/3613.}
-    #     },
-    #     'MIRI':{
-    #         '1/SHORT': 0.0009,
-    #         '1/MEDIUM': 0.0011,
-    #         '1/LONG': 0.0012,
-    #         '2/SHORT': 0.0014,
-    #         '2/MEDIUM': 0.0016,
-    #         '2/LONG': 0.0019,
-    #         '3/SHORT': 0.0021,
-    #         '3/MEDIUM': 0.0025,
-    #         '3/LONG': 0.0029,
-    #         '4/SHORT': 0.0035,
-    #         '4/MEDIUM': 0.0042,
-    #         '4/LONG': 0.0049
-    #     }
-    # }
+    #Dictionary of spectral resolutions
+    resolution = {
+        'NIRSPEC':{
+            'PRISM/CLEAR':  {'low': 0.60/30., 'high': 5.30/330.},
+            'G140M/F070LP': {'low': 0.70/500., 'high': 1.26/898.},
+            'G140M/F100LP': {'low': 0.98/699., 'high': 1.88/1343.},
+            'G235M/F170LP': {'low': 1.70/722., 'high': 3.15/1342.},
+            'G395M/F290LP': {'low': 2.88/728., 'high': 5.20/1317.},
+            'G140H/F070LP': {'low': 0.70/1321., 'high': 1.26/2395.},
+            'G140H/F100LP': {'low': 0.98/1849., 'high': 1.87/3675.},
+            'G235H/F170LP': {'low': 1.70/1911., 'high': 3.15/3690.},
+            'G395H/F290LP': {'low': 2.88/1927., 'high': 5.20/3613.}
+        },
+        'MIRI':{
+            '1/SHORT': 0.0009,
+            '1/MEDIUM': 0.0011,
+            '1/LONG': 0.0012,
+            '2/SHORT': 0.0014,
+            '2/MEDIUM': 0.0016,
+            '2/LONG': 0.0019,
+            '3/SHORT': 0.0021,
+            '3/MEDIUM': 0.0025,
+            '3/LONG': 0.0029,
+            '4/SHORT': 0.0035,
+            '4/MEDIUM': 0.0042,
+            '4/LONG': 0.0049
+        }
+    }
 
 
     atm_keys = list(composition.keys())
@@ -136,29 +138,27 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
                     lifetime_list = ','.join(lifetimes)
                     modified_line = '<ATMOSPHERE-TAU>{}\n'.format(lifetime_list)
                     fn.write(modified_line)
-                elif '<SURFACE-GAS-RATIO>' in line:
-                    modified_line = '<SURFACE-GAS-RATIO>{}\n'.format(composition['SURFACE-GAS-RATIO']['value'])
-                    fn.write(modified_line)
-                elif '<SURFACE-GAS-UNIT>' in line:
-                    modified_line = '<SURFACE-GAS-UNIT>{}\n'.format(composition['SURFACE-GAS-RATIO']['value'])
-                    fn.write(modified_line)
-                elif '<SURFACE-TEMPERATURE>' in line:
-                    modified_line = '<SURFACE-TEMPERATURE>{}\n'.format(composition['SURFACE-TEMPERATURE']['value'])
-                    fn.write(modified_line)
-                elif '<SURFACE-ALBEDO>' in line:
-                    modified_line = '<SURFACE-ALBEDO>{}\n'.format(composition['SURFACE-ALBEDO']['value'])
-                    fn.write(modified_line)
-                elif '<SURFACE-EMISSIVITY>' in line:
-                    modified_line = '<SURFACE-EMISSIVITY>{}\n'.format(composition['SURFACE-EMISSIVITY']['value'])
-                    fn.write(modified_line)
                 elif '<OBJECT-DIAMETER>' in line:
                     continue
                 else:
                     fn.write(line)
 
             #Finish adding the continuum properties
-            fn.write('<ATMOSPHERE-CONTINUUM>Rayleigh,Refraction,CIA_all,UV_all\n')
-            fn.write('<SURFACE-GAS-UNIT>{}\n'.format(composition['SURFACE-GAS-RATIO']['unit']))
+            if withCont:
+                fn.write('<ATMOSPHERE-CONTINUUM>Rayleigh,Refraction,CIA_all,UV_all\n')
+                modified_line = '<SURFACE-GAS-RATIO>{}\n'.format(composition['SURFACE-GAS-RATIO']['value'])
+                fn.write(modified_line)
+                modified_line = '<SURFACE-GAS-UNIT>{}\n'.format(composition['SURFACE-GAS-RATIO']['value'])
+                fn.write(modified_line)
+                modified_line = '<SURFACE-TEMPERATURE>{}\n'.format(composition['SURFACE-TEMPERATURE']['value'])
+                fn.write(modified_line)
+                modified_line = '<SURFACE-ALBEDO>{}\n'.format(composition['SURFACE-ALBEDO']['value'])
+                fn.write(modified_line)
+                modified_line = '<SURFACE-EMISSIVITY>{}\n'.format(composition['SURFACE-EMISSIVITY']['value'])
+                fn.write(modified_line)
+                fn.write('<GENERATOR-CONT-MODEL>Y\n')
+            else:
+                fn.write('<GENERATOR-CONT-MODEL>N\n')
 
             #Add in properties for JWST
             fn.write('<GENERATOR-TELESCOPE>SINGLE\n')
@@ -166,12 +166,11 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
 
             #Add in flux and modeling properties
             fn.write('<GENERATOR-GAS-MODEL>Y\n')
-            fn.write('<GENERATOR-CONT-MODEL>Y\n')
             fn.write('<GENERATOR-CONT-STELLAR>Y\n')
             fn.write('<GENERATOR-RADUNITS>Jy\n')
             fn.write('<GENERATOR-TRANS-APPLY>N\n')
             fn.write('<GENERATOR-RESOLUTIONKERNEL>N\n')
-            fn.write('GENERATOR-TRANS>02-01\n')
+            fn.write('<GENERATOR-TRANS>02-01\n')
 
 
             #Add in geometric factors such as offsets and wavelength ranges
@@ -179,8 +178,12 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
             fn.write('<GENERATOR-RANGE2>{}\n'.format(wave[-1]))
             with open(specFile) as sf:
                 for _, line in enumerate(sf):
-                    if '#Spectral plate scale (um)' in line:
-                        res_element = float(line.split()[-1])
+                    # if '#Spectral plate scale (um)' in line:
+                    #     res_element = float(line.split()[-1])
+                    if '#Instrument used' in line:
+                        instrument = line.split()[-1]
+                    if '#Grating used' in line:
+                        grating = line.split()[-1]
                     if '#Pixel scale (arcsec/pixel)' in line:
                         psa = float(line.split()[-1])
                     if '#Aperture radius (arcsec)' in line:
@@ -193,13 +196,18 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, key=None):
                         innerRadius = float(line.split()[-1])
                     if '#Outer annulus radius (arcsec)' in line:
                         outerRadius = float(line.split()[-1])
+            #Work out resolution from dictionary
+            if instrument == 'NIRSPEC':
+                res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
+            elif instrument == 'MIRI':
+                res_element = resolution[instrument][grating]
             fn.write('<GENERATOR-RESOLUTION>{}\n'.format(res_element))
             fn.write('<GENERATOR-RESOLUTIONUNIT>um\n')
             if mode == 'beam':
                 fn.write('<GENERATOR-BEAM>{}\n'.format(2*radAp))
                 fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
-                fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset * psa))
-                fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset * psa))
+                fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset))
+                fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')
             if mode == 'azimuthal':
                 if '#Pixel scale (arcsec/pixel)' in line:
