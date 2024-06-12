@@ -169,7 +169,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, key=None):
             fn.write('<GENERATOR-CONT-STELLAR>Y\n')
             fn.write('<GENERATOR-RADUNITS>Jy\n')
             fn.write('<GENERATOR-TRANS-APPLY>N\n')
-            fn.write('<GENERATOR-RESOLUTIONKERNEL>N\n')
+            fn.write('<GENERATOR-RESOLUTIONKERNEL>Y\n')
             fn.write('<GENERATOR-TRANS>02-01\n')
 
 
@@ -253,7 +253,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, key=None):
             for i in range(len(wave)):
                 if not np.isnan(spec[i]):
                     if retrieval['COMA-OPACITY'] == 'thin':
-                        fn.write('{} {} {}\n'.format(wave[i],spec[i]/100.,err[i]/100.))
+                        fn.write('{} {} {}\n'.format(wave[i],spec[i]/1000.,err[i]/1000.))
                     else:
                         fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
                 else:

@@ -30,7 +30,18 @@ def makePlots(retFile,withPlots):
                 except:
                     pass
 
-        plt.plot(wave,spec,label='Data')
-        plt.plot(wave,model,label='Model')
-        plt.legend()
+        #Set up the plots
+        fig, axes = plt.subplots(3,1,figsize=(10,10))
+        fig.subplots_adjust(hspace=0.25,wspace=0.01)
+        axes[0].plot(wave,spec,label='Data')
+        axes[0].plot(wave,model,label='Model')
+        axes[0].plot(wave,base,label='Base')
+        axes[0].legend()
+
+        axes[1].plot(wave,spec-model,label='Residual')
+        axes[1].plot(wave,base,label='Base')
+        axes[1].legend()
+
+        axes[2].plot(wave,model-base,label='Model Gas Spectra')
+        axes[2].legend()
         plt.show()
