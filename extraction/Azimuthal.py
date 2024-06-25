@@ -12,7 +12,7 @@ class Azimuthal(object):
         super().__init__(*args, **kwargs)
 
     @u.quantity_input(waveLo = u.um, waveUp = u.um, innerRadius = u.arcsec, outerRadius = u.arcsec)
-    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,innerRadius=0.0*u.arcsec,outerRadius=0.1*u.arcsec,mask=None,withPlots=False):
+    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,innerRadius=0.0*u.arcsec,outerRadius=0.1*u.arcsec,mask=None,withPlots=False,split=None):
         """
         Extract a spectrum within a specified annulus, take the azimuthal average, and save it to a text file.
         Plot the aperture and extracted spectrum if desired.
@@ -40,6 +40,7 @@ class Azimuthal(object):
             sciCube = readCube(cubeFiles[j])
             data = sciCube.data
             derr = sciCube.derr
+            cdata = sciCube.cdata
             dnpts = data.shape[0]
 
             psr = sciCube.hdr['PIXAR_SR']*u.sr
@@ -71,6 +72,24 @@ class Azimuthal(object):
             spec = np.zeros(dnpts)
             sigma = np.zeros(dnpts)
 
+            #Check whether we are splitting the chip
+            if split == 'left':
+                data[:,:,sciCube.xcenter:] = np.nan
+                derr[:,:,sciCube.xcenter:] = np.nan
+                cdata[:,sciCube.xcenter:] = np.nan
+            elif split == 'right':
+                data[:,:,:sciCube.xcenter] = np.nan
+                derr[:,:,:sciCube.xcenter] = np.nan
+                cdata[:,:sciCube.xcenter] = np.nan
+            elif split == 'lower':
+                data[:,sciCube.ycenter:,:] = np.nan
+                derr[:,sciCube.ycenter:,:] = np.nan
+                cdata[sciCube.ycenter:,:] = np.nan
+            elif split == 'upper':
+                data[:,:sciCube.ycenter,:] = np.nan
+                derr[:,:sciCube.ycenter,:] = np.nan
+                cdata[:sciCube.ycenter,:] = np.nan
+
             for i in range(dnpts):
                 sci_img = data[i,:,:]*u.MJy/u.sr
                 err_img = derr[i,:,:]*u.MJy/u.sr
@@ -90,8 +109,8 @@ class Azimuthal(object):
             if withPlots:
                 fig, axes = plt.subplots(1,2)
                 fig.subplots_adjust(hspace=0.45,wspace=0.45)
-                axes[0].imshow(sciCube.cdata,origin='lower',cmap='viridis',interpolation='none')
-                axes[0].plot(sciCube.xcenter,sciCube.ycenter,marker='+',markersize=8,color='r')
+                axes[0].imshow(cdata,origin='lower',cmap='viridis',interpolation='none')
+                axes[0].plot(sciCube.xcenter,sciCube.ycenter,marker='+',markersize=6,color='r')
                 axes[0].set_title('Extraction Region for Cube #{}'.format(j))
                 apEx.plot(ax=axes[0], color='red',lw=2)
 

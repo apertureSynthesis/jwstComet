@@ -23,9 +23,12 @@ def ephCFG(specFile,name,objectType,midtime,delta,key=None):
 
     #Send it to the PSG
     if key == None:
-        os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(cfgName,ephName))
+        #os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(cfgName,ephName))
+        os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(cfgName,ephName))
     else:
-        os.system('curl -d key={} -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(key,cfgName,ephName))
+        #os.system('curl -d key={} -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(key,cfgName,ephName))
+        os.system('curl -d key={} -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(key,cfgName,ephName))
+
 
 def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, key=None):
 
@@ -78,7 +81,11 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, key=None):
             '3/LONG': 0.0029,
             '4/SHORT': 0.0035,
             '4/MEDIUM': 0.0042,
-            '4/LONG': 0.0049
+            '4/LONG': 0.0049,
+            '1/MULTIPLE': 0.00105,
+            '2/MULTIPLE': 0.00165,
+            '3/MULTIPLE': 0.0025,
+            '4/MULTIPLE': 0.0042
         }
     }
 
@@ -262,9 +269,12 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, key=None):
 
     #Send it to the PSG
     if key == None:
-        os.system('curl -d type=ret --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(retName,resFile))
+        #os.system('curl -d type=ret --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(retName,resFile))
+        os.system('curl -d type=ret --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(retName,resFile))
     else:
-        os.system('curl -d key={} -d type=ret --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(key,retName,resFile))
+        #os.system('curl -d key={} -d type=ret --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(key,retName,resFile))
+        os.system('curl -d key={} -d type=ret --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(key,retName,resFile))
+
 
 
     

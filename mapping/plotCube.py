@@ -1,45 +1,55 @@
+import os,sys
 import numpy as np
+from astropy.modeling import models, fitting
+from astropy.stats import sigma_clip
+from matplotlib import pyplot as plt
 import pandas as pd
+from glob import glob
 import astropy.units as u
-import matplotlib.pyplot as plt
-from jwstComet.extraction import Beam
-from jwstComet.modeling import runPSG, readPSG
-from jwstComet.utils import readCube
+from jwstComet import extraction, utils
 
-class Mapping(object):
+class plotCube(object):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @u.quantity_input(waveLo=u.um, waveUp=u.um, radAp=u.arcsec)
-    def makeMaps(self,cubeFiles,specStem,csvFile,waveLo,waveUp,radAp,name,objectType,composition,retrieval,smooth=None,box=None,key=None):
+    
+    def polynomial_fitting(self,wave,spec,order=2,iters=5,nsigma=2.5,withPlots=False):
+        """
+        Function to remove continuum with a polynomial fit
+        """
+        fit = fitting.LevMarLSQFitter()
+        m = models.Polynomial1D(degree=order)
+        or_fit = fitting.FittingWithOutlierRemoval(fit, sigma_clip, niter=iters, sigma=nsigma)
+
+        f, mask = or_fit(m, wave, spec)
+        filtered_data = np.ma.masked_array(spec, mask=~mask)
+
+        if withPlots:
+            fig,axes = plt.subplots(2,1)
+            axes[0].plot(wave,spec)
+            axes[0].plot(wave,filtered_data,"r.")
+            axes[0].plot(wave,f(wave))
+            axes[1].plot(wave,spec-f(wave))
+            plt.show()
+
+        return spec - f(wave)
+    
+    def makePlots(self,cubeFiles,specStem,csvFile,waveLo,waveUp,radAp,withPlots=False):
         """
         Read in a JWST IFU cube. Find the photocenter. Extract spectra across the
-        entire cube. Send them to the PSG for analysis. Plot the results.
+        entire cube. Subtract continuum. Plot the results.
         """
 
         #Read in the first cube to serve as a coordinate reference
-        sciCube = readCube(cubeFiles[0])
-
-        #Crop a portion if desired
-        if box != None:
-            x0 = sciCube.xcenter - box
-            xf = sciCube.xcenter + box
-            y0 = sciCube.ycenter - box
-            yf = sciCube.ycenter + box
-        else:
-            x0 = 0
-            xf = sciCube.xs
-            y0 = 0
-            yf = sciCube.ys
+        sciCube = utils.readCube(cubeFiles[0])
 
         retrieval_x_indexes   = []
         retrieval_x_offsets   = []
         retrieval_y_indexes   = []
         retrieval_y_offsets   = []
-        retrieval_variables   = []
-        retrieval_values      = []
-        retrieval_sigmas      = []
+        extracted_spectra = []
+        subtracted_spectra = []
 
         #Work out how much we are spatially binning the results
         #Solid angle subtended by a square pixel (steradians)
@@ -53,8 +63,8 @@ class Mapping(object):
 
 
         #Now extract the spatially binned (if requested) maps
-        for x in range(x0, xf):
-            for y in range(y0, yf):
+        for x in range(0, sciCube.xs):
+            for y in range(0, sciCube.ys):
                 #Check whether we are on the chip
                 if sciCube.wmap[50,y,x] != 0:
                     #Calculate x_offset and y_offset in arcseconds
@@ -67,25 +77,24 @@ class Mapping(object):
                     #Perform the extract
                     specFile = specStem+'-{:.2f}-arcsecRadAp-{:.1f}-arcsecXoff-{:.1f}-arcsecYoff-{:.2f}um-to-{:.2f}um.txt'.format(radAp.value,dxArc.value,dyArc.value,waveLo.value,waveUp.value)
                     resFile = specFile[:-3]+'.retrieval-results.txt'
-                    beam = Beam()
-                    beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLo=waveLo, waveUp=waveUp, radAp=radAp, xOffset=dxArc, yOffset=dyArc, smooth=smooth)
-                    beamModel = runPSG()
-                    beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval=retrieval, mode='beam', withPlots=True, key=key)
-                    
-                    try:
-                        results = readPSG(resFile)
-                        retrieval_variables.append(results.retrieval_variables)
-                        retrieval_values.append(results.retrieval_values)
-                        retrieval_sigmas.append(results.retrieval_sigmas)
+                    beam = extraction.Beam()
+                    beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLo=waveLo, waveUp=waveUp, radAp=radAp, xOffset=dxArc, yOffset=dyArc)
 
-                        #Add the position to the index list
-                        retrieval_x_indexes.append(x)
-                        retrieval_y_indexes.append(y)
-                        retrieval_x_offsets.append(dxArc.value)
-                        retrieval_y_offsets.append(dyArc.value)
-                    except:
-                        pass
+                    #Perform the continuum subtraction
+                    wave, spec, err = np.loadtxt(specFile, unpack=1)
+                    if np.isnan(np.sum(spec)):
+                        continue
 
+                    spec_clipped = sigma_clip(spec,sigma=10,maxiters=5)
+                    spec_sub = self.polynomial_fitting(wave, spec_clipped, withPlots=withPlots)
+
+                    #Add the position to the index list
+                    retrieval_x_indexes.append(x)
+                    retrieval_y_indexes.append(y)
+                    retrieval_x_offsets.append(dxArc.value)
+                    retrieval_y_offsets.append(dyArc.value)
+                    extracted_spectra.append(np.nansum(spec))
+                    subtracted_spectra.append(np.nansum(spec_sub))
 
         #Save the results to a CSV                  
         #Create a dataframe to store
@@ -95,17 +104,8 @@ class Mapping(object):
         df['Y-Index'] = retrieval_y_indexes
         df['X-Offset'] = retrieval_x_offsets
         df['Y-Offset'] = retrieval_y_offsets
-
-        #Now save each value
-        for i in range(len(retrieval_variables[0])):
-            item = []
-            sigma = []
-            for j in range(len(retrieval_variables)):
-                item.append(retrieval_values[j][i])
-                sigma.append(retrieval_sigmas[j][i])
-
-            df[retrieval_variables[0][i]] = item
-            df['sigma-'+retrieval_variables[0][i]] = sigma
+        df['Spectra'] = extracted_spectra
+        df['Sub-spectra'] = subtracted_spectra
 
         df.to_csv(csvFile,index=False)      
 
@@ -120,7 +120,7 @@ class Mapping(object):
 
         #Split off the retrieved variables and sigmas
         df_retrieved = df.drop(['X-Index','Y-Index','X-Offset','Y-Offset'], axis=1)
-        df_values = df_retrieved.iloc[:,::2]
+        df_values = df_retrieved.iloc[:,:]
 
         #Set up the plots
         fig, axes = plt.subplots(1,len(df_values.keys()),figsize=(10,10))
@@ -145,7 +145,6 @@ class Mapping(object):
                 im = axes.imshow(plot_array,origin='lower',cmap='viridis')
                 axes.set_title(df_values.columns[0])
                 plt.colorbar(im, ax = axes)
-
 
 
 

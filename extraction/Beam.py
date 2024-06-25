@@ -3,6 +3,7 @@ import numpy as np
 import astropy.units as u
 import matplotlib.pyplot as plt
 from astropy.io import fits
+from astropy.convolution import convolve, Box2DKernel
 from photutils.aperture import CircularAperture, aperture_photometry
 from jwstComet.utils import readCube, subchannel_splice, readHeader
 
@@ -13,7 +14,7 @@ class Beam(object):
 
 
     @u.quantity_input(waveLo=u.um, waveUp=u.um, radAp=u.arcsec, xOffset=u.arcsec, yOffset=u.arcsec)
-    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,mask=None,withPlots=False):
+    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,smooth=None,mask=None,withPlots=False):
         """
         Extract a spectrum at the specified position and save it to a text file.
         Plot the aperture and extracted spectrum if desired
@@ -36,8 +37,13 @@ class Beam(object):
             data = sciCube.data
             #Noise
             derr = sciCube.derr
+            #Collapsed cube (for plotting)
+            cdata = sciCube.cdata
             #Length of spectral axis
             dnpts = data.shape[0]
+
+            if smooth != None:
+                cdata = convolve(sciCube.cdata,Box2DKernel(smooth))
 
             #Pixel scale - convert from steradians to arcsec**2
             psr = sciCube.hdr['PIXAR_SR']*u.sr
@@ -68,8 +74,12 @@ class Beam(object):
             sigma = np.zeros(dnpts)
 
             for i in range(dnpts):
-                sci_img = data[i,:,:]*u.MJy/u.sr
-                err_img = derr[i,:,:]*u.MJy/u.sr
+                if smooth != None:
+                    sci_img = convolve(data[i,:,:],Box2DKernel(smooth))*u.MJy/u.sr
+                    err_img = convolve(data[i,:,:],Box2DKernel(smooth))*u.MJy/u.sr
+                else:
+                    sci_img = data[i,:,:]*u.MJy/u.sr
+                    err_img = derr[i,:,:]*u.MJy/u.sr
                 apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='subpixel', subpixels=5)
 
                 flux_jy = (apPhot['aperture_sum'][0]*psrScale).to(u.Jy/u.pixel)
@@ -81,7 +91,7 @@ class Beam(object):
             if withPlots:
                 fig, axes = plt.subplots(1,2)
                 fig.subplots_adjust(hspace=0.45,wspace=0.45)
-                axes[0].imshow(sciCube.cdata,origin='lower',cmap='viridis',interpolation='none')
+                axes[0].imshow(cdata,origin='lower',cmap='viridis',interpolation='none')
                 axes[0].plot(sciCube.xcenter,sciCube.ycenter,marker='+',markersize=8,color='r')
                 axes[0].set_title('Extraction Region for Cube #{}'.format(j))
                 apEx.plot(ax=axes[0], color='red',lw=2)
