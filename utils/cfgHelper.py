@@ -38,22 +38,23 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, key=None):
 
     #Dictionary of solar photolysis lifetimes
     solar_lifetimes = {
-        'H2O':      {'quiet': 8.294e4, 'active': 4.539e4},
-        'OHP':      {'quiet': 8.294e4, 'active': 4.539e4},
-        'CO2':      {'quiet': 4.948e5, 'active': 2.101e5},
-        '13CO2':    {'quiet': 4.948e5, 'active': 2.101e5},
-        'OCS':      {'quiet': 9.807e3, 'active': 7.723e3},
-        'HCN':      {'quiet': 7.662e4, 'active': 3.085e4},
-        'CO':       {'quiet': 1.335e6, 'active': 5.320e5},
-        'H2CO':     {'quiet': 4.649e3, 'active': 4.369e3},
-        'CH4':      {'quiet': 1.317e5, 'active': 5.381e4},
-        'C2H6':     {'quiet': 9.491e4, 'active': 3.978e4},
-        'CH3OH':    {'quiet': 8.787e4, 'active': 4.816e4},
-        'CH3OH_V9': {'quiet': 8.787e4, 'active': 4.816e4},
-        'NH3':      {'quiet': 5.658e3, 'active': 5.022e3},
-        'C2H2':     {'quiet': 3.269e4, 'active': 1.691e4},
-        'CN':       {'quiet': '1.3e4 2.1e5', 'active': '1.3e4 2.1e5'},
-        'NH2':      {'quiet': '4.1e3 6.2e4', 'active': '4.1e3 6.2e4'}
+        'H2O':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'H2O'},
+        'OHP':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'OHP'},
+        'CO2':      {'quiet': 4.948e5, 'active': 2.101e5, 'alias': 'CO2'},
+        '13CO2':    {'quiet': 4.948e5, 'active': 2.101e5, 'alias': '13CO2'},
+        'OCS':      {'quiet': 9.807e3, 'active': 7.723e3, 'alias': 'OCS'},
+        'HCN':      {'quiet': 7.662e4, 'active': 3.085e4, 'alias': 'HCN'},
+        'CO':       {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'CO'},
+        'H2CO':     {'quiet': 4.649e3, 'active': 4.369e3, 'alias': 'H2CO'},
+        'CH4':      {'quiet': 1.317e5, 'active': 5.381e4, 'alias': 'CH4'},
+        'C2H6':     {'quiet': 9.491e4, 'active': 3.978e4, 'alias': 'C2H6'},
+        'CH3OH':    {'quiet': 8.787e4, 'active': 4.816e4, 'alias': 'CH3OH'},
+        'CH3OH_V9': {'quiet': 8.787e4, 'active': 4.816e4, 'alias': 'CH3OH_V9'},
+        'NH3':      {'quiet': 5.658e3, 'active': 5.022e3, 'alias': 'NH3'},
+        'C2H2':     {'quiet': 3.269e4, 'active': 1.691e4, 'alias': 'C2H2'},
+        'CN':       {'quiet': '1.3e4 2.1e5', 'active': '1.3e4 2.1e5', 'alias': 'CN'},
+        'NH2':      {'quiet': '4.1e3 6.2e4', 'active': '4.1e3 6.2e4', 'alias': 'NH2'},
+        'H2CO-Daughter': {'quiet': '1.428e3 4.649e3', 'active': '1.428e3 4.369e3', 'alias': 'H2CO'}
     }
 
     #Dictionary of spectral resolutions
@@ -120,7 +121,8 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, key=None):
                     modified_line = '<ATMOSPHERE-GAS>{}\n'.format(gas_list)
                     fn.write(modified_line)
                 elif '<ATMOSPHERE-TYPE>' in line:
-                    models = ['GSFC[' + i + ']' for i in gases]
+                    models = ['GSFC[' + solar_lifetimes[i]['alias'] + ']' for i in gases]
+                    #models = ['GSFC[' + i + ']' for i in gases]
                     model_list = ','.join(models)
                     modified_line = '<ATMOSPHERE-TYPE>{}\n'.format(model_list)
                     fn.write(modified_line)
