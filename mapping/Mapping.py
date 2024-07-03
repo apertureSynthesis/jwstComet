@@ -90,28 +90,28 @@ class Mapping(object):
                             df1 = pd.read_csv(csvFile)
 
                             df = pd.DataFrame()
-                            df['X-Index'] = x
-                            df['Y-Index'] = y
-                            df['X-Offset'] = dxArc.value
-                            df['Y-Offset'] = dyArc.value
+                            df['X-Index'] = [x]
+                            df['Y-Index'] = [y]
+                            df['X-Offset'] = [dxArc.value]
+                            df['Y-Offset'] = [dyArc.value]
 
                             for i in range(len(results.retrieval_variables)):
-                                df[results.retrieval_variables[i]] = results.retrieval_values[i]
-                                df['sigma-'+results.retrieval_variables[i]] = results.retrieval_sigmas[i]
+                                df[results.retrieval_variables[i]] = [results.retrieval_values[i]]
+                                df['sigma-'+results.retrieval_variables[i]] = [results.retrieval_sigmas[i]]
 
                             df1 = pd.concat([df1,df])
                             df1.to_csv(csvFile)
 
                         else:
                             df = pd.DataFrame()
-                            df['X-Index'] = x
-                            df['Y-Index'] = y
-                            df['X-Offset'] = dxArc.value
-                            df['Y-Offset'] = dyArc.value
+                            df['X-Index'] = [x]
+                            df['Y-Index'] = [y]
+                            df['X-Offset'] = [dxArc.value]
+                            df['Y-Offset'] = [dyArc.value]
 
                             for i in range(len(results.retrieval_variables)):
-                                df[results.retrieval_variables[i]] = results.retrieval_values[i]
-                                df['sigma-'+results.retrieval_variables[i]] = results.retrieval_sigmas[i]
+                                df[results.retrieval_variables[i]] = [results.retrieval_values[i]]
+                                df['sigma-'+results.retrieval_variables[i]] = [results.retrieval_sigmas[i]]
 
                             df1 = pd.concat([df1,df])
                             df1.to_csv(csvFile)
