@@ -1,3 +1,4 @@
+import os,sys
 import numpy as np
 import pandas as pd
 import astropy.units as u
@@ -83,31 +84,63 @@ class Mapping(object):
                         retrieval_y_indexes.append(y)
                         retrieval_x_offsets.append(dxArc.value)
                         retrieval_y_offsets.append(dyArc.value)
+
+                        #Save results to a file, or update the existing file
+                        if os.path.exists(csvFile):
+                            df1 = pd.read_csv(csvFile)
+
+                            df = pd.DataFrame()
+                            df['X-Index'] = x
+                            df['Y-Index'] = y
+                            df['X-Offset'] = dxArc.value
+                            df['Y-Offset'] = dyArc.value
+
+                            for i in range(len(results.retrieval_variables)):
+                                df[results.retrieval_variables[i]] = results.retrieval_values[i]
+                                df['sigma-'+results.retrieval_variables[i]] = results.retrieval_sigmas[i]
+
+                            df1 = pd.concat([df1,df])
+                            df1.to_csv(csvFile)
+
+                        else:
+                            df = pd.DataFrame()
+                            df['X-Index'] = x
+                            df['Y-Index'] = y
+                            df['X-Offset'] = dxArc.value
+                            df['Y-Offset'] = dyArc.value
+
+                            for i in range(len(results.retrieval_variables)):
+                                df[results.retrieval_variables[i]] = results.retrieval_values[i]
+                                df['sigma-'+results.retrieval_variables[i]] = results.retrieval_sigmas[i]
+
+                            df1 = pd.concat([df1,df])
+                            df1.to_csv(csvFile)
+
                     except:
                         pass
 
 
         #Save the results to a CSV                  
         #Create a dataframe to store
-        df = pd.DataFrame()
+        # df = pd.DataFrame()
 
-        df['X-Index'] = retrieval_x_indexes
-        df['Y-Index'] = retrieval_y_indexes
-        df['X-Offset'] = retrieval_x_offsets
-        df['Y-Offset'] = retrieval_y_offsets
+        # df['X-Index'] = retrieval_x_indexes
+        # df['Y-Index'] = retrieval_y_indexes
+        # df['X-Offset'] = retrieval_x_offsets
+        # df['Y-Offset'] = retrieval_y_offsets
 
-        #Now save each value
-        for i in range(len(retrieval_variables[0])):
-            item = []
-            sigma = []
-            for j in range(len(retrieval_variables)):
-                item.append(retrieval_values[j][i])
-                sigma.append(retrieval_sigmas[j][i])
+        # #Now save each value
+        # for i in range(len(retrieval_variables[0])):
+        #     item = []
+        #     sigma = []
+        #     for j in range(len(retrieval_variables)):
+        #         item.append(retrieval_values[j][i])
+        #         sigma.append(retrieval_sigmas[j][i])
 
-            df[retrieval_variables[0][i]] = item
-            df['sigma-'+retrieval_variables[0][i]] = sigma
+        #     df[retrieval_variables[0][i]] = item
+        #     df['sigma-'+retrieval_variables[0][i]] = sigma
 
-        df.to_csv(csvFile,index=False)      
+        # df.to_csv(csvFile,index=False)      
 
     def plotMaps(self,csvFile):
         """
