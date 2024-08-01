@@ -8,9 +8,6 @@ from jwstComet.utils import readCube, subchannel_splice, readHeader
 
 class Azimuthal(object):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     @u.quantity_input(waveLo = u.um, waveUp = u.um, innerRadius = u.arcsec, outerRadius = u.arcsec)
     def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,innerRadius=0.0*u.arcsec,outerRadius=0.1*u.arcsec,mask=None,withPlots=False,split=None):
         """
