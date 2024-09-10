@@ -13,18 +13,23 @@ class Beam(object):
         super().__init__(*args, **kwargs)
 
 
-    @u.quantity_input(waveLo=u.um, waveUp=u.um, radAp=u.arcsec, xOffset=u.arcsec, yOffset=u.arcsec)
-    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,smooth=None,mask=None,withPlots=False):
+    @u.quantity_input(radAp=u.arcsec, xOffset=u.arcsec, yOffset=u.arcsec)
+    def extractSpec(self,cubeFiles,specFile,waveLos,waveUps,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,smooth=None,mask=None,withPlots=False):
         """
         Extract a spectrum at the specified position and save it to a text file.
         Plot the aperture and extracted spectrum if desired
         """
+        if type(waveLos) is not list:
+            waveLos = [waveLos]
+        
+        if type(waveUps) is not list:
+            waveUps = [waveUps]
 
-        try:
-            if waveLo.value >= waveUp.value:
-                raise ValueError('Lower wavelength must be smaller than upper wavelength')
-        except (ValueError):
-            exit('Update wavelength range')
+        # try:
+        #     if waveLo.value >= waveUp.value:
+        #         raise ValueError('Lower wavelength must be smaller than upper wavelength')
+        # except (ValueError):
+        #     exit('Update wavelength range')
 
         combined_waves = []
         combined_specs = []
@@ -114,7 +119,13 @@ class Beam(object):
 
 
         #Only extract the wavelength region of interest
-        wv_region = np.where((wvls>waveLo.value) & (wvls<waveUp.value))
+        #wv_region = np.where((wvls>waveLo.value) & (wvls<waveUp.value))
+        wv_region = []
+        for waveLo, waveUp in zip(waveLos,waveUps):
+            wvr = np.where((wvls>waveLo.value) & (wvls<waveUp.value))
+            wv_region = np.concatenate((wv_region,wvr))
+
+        wv_region = wv_region.astype(int)
 
         #Mask pixels with very large sigma if requested
         if mask != None:

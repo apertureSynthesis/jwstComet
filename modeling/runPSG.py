@@ -37,7 +37,7 @@ class runPSG(object):
         midtime = df_eph['datetime_str'][obs_midpoint]
         print(midtime)
 
-        cfgHelper.ephCFG(specFile,name,objectType,midtime,delta,key)
+        cfgHelper.ephCFG(specFile,name,objectType,midtime,key)
 
         if retrieval != None:
             cfgHelper.atmCFG(specFile,resFile,composition,retrieval,mode,withCont,key)

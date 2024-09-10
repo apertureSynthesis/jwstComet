@@ -3,7 +3,7 @@ import numpy as np
 from datetime import datetime
 import pandas as pd
 
-def ephCFG(specFile,name,objectType,midtime,delta,key=None):
+def ephCFG(specFile,name,objectType,midtime,key=None):
     """
     Writes a CFG file that will request the PSG to return an updated CFG with ephemeris information. 
     This will be used in the next step to either run a forward model of a retrieval.
@@ -218,9 +218,13 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, key=None):
                 fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset))
                 fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')
+            if mode == 'mapping':
+                fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(psa,psa))
+                fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
+                fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset))
+                fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset))
+                fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')
             if mode == 'azimuthal':
-                if '#Pixel scale (arcsec/pixel)' in line:
-                    psa = float(line.split()[-1])
                 if '#Inner annulus radius (arcsec)' in line:
                     innerRadius = float(line.split()[-1])
                 if '#Outer annulus radius (arcsec)' in line:

@@ -14,6 +14,8 @@ class Azimuthal(object):
         Extract a spectrum within a specified annulus, take the azimuthal average, and save it to a text file.
         Plot the aperture and extracted spectrum if desired.
         """
+        # if type(waveLo) is not list: waveLo = [waveLo]
+        # if type(waveUp) is not list: waveUp = [waveUp]
         try:
             if waveLo.value >= waveUp.value:
                 raise ValueError('Lower wavelength must be smaller than upper wavelength')

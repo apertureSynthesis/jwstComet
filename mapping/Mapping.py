@@ -16,7 +16,8 @@ class Mapping(object):
     def makeMaps(self,cubeFiles,specStem,csvFile,waveLo,waveUp,radAp,name,objectType,composition,retrieval,smooth=None,box=None,key=None):
         """
         Read in a JWST IFU cube. Find the photocenter. Extract spectra across the
-        entire cube. Send them to the PSG for analysis. Plot the results.
+        entire cube. Send them to the PSG for analysis. Plot the model results and extracted spectrum.
+        Save the results to a CSV file.
         """
 
         #Read in the first cube to serve as a coordinate reference
@@ -71,7 +72,7 @@ class Mapping(object):
                     beam = Beam()
                     beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLo=waveLo, waveUp=waveUp, radAp=radAp, xOffset=dxArc, yOffset=dyArc, smooth=smooth)
                     beamModel = runPSG()
-                    beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval=retrieval, mode='beam', withPlots=True, key=key)
+                    beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval=retrieval, mode='mapping', withPlots=True, key=key)
                     
                     try:
                         results = readPSG(resFile)
@@ -99,8 +100,9 @@ class Mapping(object):
                                 df[results.retrieval_variables[i]] = [results.retrieval_values[i]]
                                 df['sigma-'+results.retrieval_variables[i]] = [results.retrieval_sigmas[i]]
 
-                            df1 = pd.concat([df1,df])
-                            df1.to_csv(csvFile)
+                            df2 = pd.concat([df1,df])
+                            os.system('rm {}'.format(csvFile))
+                            df2.to_csv(csvFile,index=False)
 
                         else:
                             df = pd.DataFrame()
@@ -113,34 +115,11 @@ class Mapping(object):
                                 df[results.retrieval_variables[i]] = [results.retrieval_values[i]]
                                 df['sigma-'+results.retrieval_variables[i]] = [results.retrieval_sigmas[i]]
 
-                            df1 = pd.concat([df1,df])
-                            df1.to_csv(csvFile)
+                            df.to_csv(csvFile,index=False)
 
                     except:
                         pass
-
-
-        #Save the results to a CSV                  
-        #Create a dataframe to store
-        # df = pd.DataFrame()
-
-        # df['X-Index'] = retrieval_x_indexes
-        # df['Y-Index'] = retrieval_y_indexes
-        # df['X-Offset'] = retrieval_x_offsets
-        # df['Y-Offset'] = retrieval_y_offsets
-
-        # #Now save each value
-        # for i in range(len(retrieval_variables[0])):
-        #     item = []
-        #     sigma = []
-        #     for j in range(len(retrieval_variables)):
-        #         item.append(retrieval_values[j][i])
-        #         sigma.append(retrieval_sigmas[j][i])
-
-        #     df[retrieval_variables[0][i]] = item
-        #     df['sigma-'+retrieval_variables[0][i]] = sigma
-
-        # df.to_csv(csvFile,index=False)      
+           
 
     def plotMaps(self,csvFile):
         """
