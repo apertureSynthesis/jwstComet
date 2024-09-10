@@ -12,8 +12,8 @@ class Mapping(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @u.quantity_input(waveLo=u.um, waveUp=u.um, radAp=u.arcsec)
-    def makeMaps(self,cubeFiles,specStem,csvFile,waveLo,waveUp,radAp,name,objectType,composition,retrieval,smooth=None,box=None,key=None):
+    @u.quantity_input(radAp=u.arcsec)
+    def makeMaps(self,cubeFiles,specStem,csvFile,waveLos,waveUps,radAp,name,objectType,composition,retrieval,smooth=None,box=None,key=None):
         """
         Read in a JWST IFU cube. Find the photocenter. Extract spectra across the
         entire cube. Send them to the PSG for analysis. Plot the model results and extracted spectrum.
@@ -70,7 +70,7 @@ class Mapping(object):
                     specFile = specStem+'-{:.2f}-arcsecRadAp-{:.1f}-arcsecXoff-{:.1f}-arcsecYoff-{:.2f}um-to-{:.2f}um.txt'.format(radAp.value,dxArc.value,dyArc.value,waveLo.value,waveUp.value)
                     resFile = specFile[:-3]+'.retrieval-results.txt'
                     beam = Beam()
-                    beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLo=waveLo, waveUp=waveUp, radAp=radAp, xOffset=dxArc, yOffset=dyArc, smooth=smooth)
+                    beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLos=waveLos, waveUps=waveUps, radAp=radAp, xOffset=dxArc, yOffset=dyArc, smooth=smooth)
                     beamModel = runPSG()
                     beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval=retrieval, mode='mapping', withPlots=True, key=key)
                     
