@@ -123,7 +123,7 @@ class Beam(object):
         wv_region = []
         for waveLo, waveUp in zip(waveLos,waveUps):
             wvr = np.where((wvls>waveLo.value) & (wvls<waveUp.value))
-            wv_region = np.concatenate((wv_region,wvr))
+            wv_region = np.concatenate((wv_region,wvr[0]))
 
         wv_region = wv_region.astype(int)
 
