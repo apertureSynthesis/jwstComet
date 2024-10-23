@@ -74,7 +74,7 @@ class Mapping(object):
                     beam = Beam()
                     beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLos=waveLos, waveUps=waveUps, radAp=radAp, xOffset=dxArc, yOffset=dyArc, smooth=smooth)
                     beamModel = runPSG()
-                    beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval=retrieval, mode='mapping', withPlots=True, key=key)
+                    beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval=retrieval, mode='beam', withPlots=True, key=key)
                     
                     try:
                         results = readPSG(resFile)

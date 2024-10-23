@@ -14,16 +14,16 @@ class Beam(object):
 
 
     @u.quantity_input(radAp=u.arcsec, xOffset=u.arcsec, yOffset=u.arcsec)
-    def extractSpec(self,cubeFiles,specFile,waveLos,waveUps,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,smooth=None,mask=None,withPlots=False):
+    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,smooth=None,mask=None,withPlots=False):
         """
         Extract a spectrum at the specified position and save it to a text file.
         Plot the aperture and extracted spectrum if desired
         """
-        if type(waveLos) is not list:
-            waveLos = [waveLos]
+        if type(waveLo) is not list:
+            waveLo = [waveLo]
         
-        if type(waveUps) is not list:
-            waveUps = [waveUps]
+        if type(waveUp) is not list:
+            waveUp = [waveUp]
 
         # try:
         #     if waveLo.value >= waveUp.value:
@@ -121,7 +121,7 @@ class Beam(object):
         #Only extract the wavelength region of interest
         #wv_region = np.where((wvls>waveLo.value) & (wvls<waveUp.value))
         wv_region = []
-        for waveLo, waveUp in zip(waveLos,waveUps):
+        for waveLo, waveUp in zip(waveLo,waveUp):
             wvr = np.where((wvls>waveLo.value) & (wvls<waveUp.value))
             wv_region = np.concatenate((wv_region,wvr[0]))
 

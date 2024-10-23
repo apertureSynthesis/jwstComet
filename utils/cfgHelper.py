@@ -230,7 +230,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, key=None):
                 if '#Outer annulus radius (arcsec)' in line:
                     outerRadius = float(line.split()[-1])
                 if innerRadius == 0:
-                    fn.write('<GENERATOR-BEAM>{}\n'.format(2*outerRadius))
+                    fn.write('<GENERATOR-BEAM>{}\n'.format(outerRadius))
                     fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 else:
                     fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(psa,outerRadius - innerRadius))

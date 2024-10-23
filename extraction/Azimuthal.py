@@ -9,15 +9,15 @@ from jwstComet.utils import readCube, subchannel_splice, readHeader
 class Azimuthal(object):
 
     @u.quantity_input(innerRadius = u.arcsec, outerRadius = u.arcsec)
-    def extractSpec(self,cubeFiles,specFile,waveLos,waveUps,innerRadius=0.0*u.arcsec,outerRadius=0.1*u.arcsec,mask=None,withPlots=False,split=None):
+    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,innerRadius=0.0*u.arcsec,outerRadius=0.1*u.arcsec,mask=None,withPlots=False,split=None):
         """
         Extract a spectrum within a specified annulus, take the azimuthal average, and save it to a text file.
         Plot the aperture and extracted spectrum if desired.
         """
-        if type(waveLos) is not list: 
-            waveLo = [waveLos]
-        if type(waveUps) is not list: 
-            waveUp = [waveUps]
+        if type(waveLo) is not list: 
+            waveLo = [waveLo]
+        if type(waveUp) is not list: 
+            waveUp = [waveUp]
         # try:
         #     if waveLo.value >= waveUp.value:
         #         raise ValueError('Lower wavelength must be smaller than upper wavelength')
@@ -65,7 +65,7 @@ class Azimuthal(object):
             #Define the aperture
             apCen = (sciCube.xcenter,sciCube.ycenter)
             if innerRadPix == 0:
-                apEx = CircularAperture(apCen, r = outerRadPix.value)
+                apEx = CircularAperture(apCen, r = outerRadPix.value/2.)
             else:
                 apEx = CircularAnnulus(apCen, r_in = innerRadPix.value, r_out = outerRadPix.value)
 
@@ -134,7 +134,7 @@ class Azimuthal(object):
         #Only extract the wavelength region of interest
         #wv_region = np.where((wvls>waveLo.value) & (wvls<waveUp.value))
         wv_region = []
-        for waveLo, waveUp in zip(waveLos,waveUps):
+        for waveLo, waveUp in zip(waveLo,waveUp):
             wvr = np.where((wvls>waveLo.value) & (wvls<waveUp.value))
             wv_region = np.concatenate((wv_region,wvr[0]))
 
