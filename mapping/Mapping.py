@@ -11,16 +11,18 @@ from jwstComet.utils import readCube
 
 class Mapping(object):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     @u.quantity_input(radAp=u.arcsec)
-    def makeMaps(self,cubeFiles,specStem,csvFile,waveLos,waveUps,radAp,name,objectType,composition,retrieval,smooth=None,box=None,key=None):
+    def makeMaps(self,cubeFiles,specStem,csvFile,waveLo,waveUp,radAp,name,objectType,composition,retrieval,withCont=False,smooth=None,box=None,local=True):
         """
         Read in a JWST IFU cube. Find the photocenter. Extract spectra across the
         entire cube. Send them to the PSG for analysis. Plot the model results and extracted spectrum.
         Save the results to a CSV file.
         """
+        if type(waveLo) is not list:
+            waveLo = [waveLo]
+        
+        if type(waveUp) is not list:
+            waveUp = [waveUp]
 
         #Read in the first cube to serve as a coordinate reference
         sciCube = readCube(cubeFiles[0])
@@ -69,12 +71,12 @@ class Mapping(object):
 
 
                     #Perform the extract
-                    specFile = specStem+'-{:.2f}-arcsecRadAp-{:.1f}-arcsecXoff-{:.1f}-arcsecYoff-{:.2f}um-to-{:.2f}um.txt'.format(radAp.value,dxArc.value,dyArc.value,min(waveLos).value,max(waveUps).value)
+                    specFile = specStem+'-{:.2f}-arcsecRadAp-{:.1f}-arcsecXoff-{:.1f}-arcsecYoff-{:.2f}um-to-{:.2f}um.txt'.format(radAp.value,dxArc.value,dyArc.value,min(waveLo).value,max(waveUp).value)
                     resFile = specFile[:-3]+'.retrieval-results.txt'
                     beam = Beam()
-                    beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLos=waveLos, waveUps=waveUps, radAp=radAp, xOffset=dxArc, yOffset=dyArc, smooth=smooth)
+                    beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLo=waveLo, waveUp=waveUp, radAp=radAp, xOffset=dxArc, yOffset=dyArc, smooth=smooth)
                     beamModel = runPSG()
-                    beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval=retrieval, mode='beam', withPlots=True, key=key)
+                    beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval=retrieval, mode='beam', withCont=withCont, withPlots=True, local=local)
                     
                     try:
                         results = readPSG(resFile)
@@ -122,17 +124,17 @@ class Mapping(object):
                     except:
                         pass
 
-    def makeImage(self,cubeFiles,specStem,csvFile,waveLos,waveUps,smooth=None,box=None,waveContLos=None,waveContUps=None):
+    def makeImage(self,cubeFiles,specStem,csvFile,waveLo,waveUp,smooth=None,box=None,waveContLos=None,waveContUps=None):
         """
         Plot an integrated intensity map. Subtract continuum if desired.
         Save results to a CSV and PDF
         """
 
-        if type(waveLos) is not list:
-            waveLos = [waveLos]
+        if type(waveLo) is not list:
+            waveLo = [waveLo]
 
-        if type(waveUps) is not list:
-            waveUps = [waveUps]
+        if type(waveUp) is not list:
+            waveUp = [waveUp]
 
         if (waveContLos is not None) & (type(waveContLos) is not list):
             waveContLos = [waveContLos]
@@ -229,7 +231,7 @@ class Mapping(object):
 
                     #Save to a file
                     #Perform the extract
-                    specFile = specStem+'-{:.1f}-arcsecXoff-{:.1f}-arcsecYoff-{:.2f}um-to-{:.2f}um.txt'.format(dxArc.value,dyArc.value,min(waveLos).value,max(waveUps).value)
+                    specFile = specStem+'-{:.1f}-arcsecXoff-{:.1f}-arcsecYoff-{:.2f}um-to-{:.2f}um.txt'.format(dxArc.value,dyArc.value,min(waveLo).value,max(waveUp).value)
 
                     #Save to a file
                     #Get header observation information

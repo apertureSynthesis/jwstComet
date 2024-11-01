@@ -7,10 +7,7 @@ from jwstComet.modeling import plotPSG
 
 class runPSG(object):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def getModels(self, specFile, resFile, name, objectType, composition=None, retrieval=None, mode=None, withCont=False, withPlots=False, key=None):
+    def getModels(self, specFile, resFile, name, objectType, composition=None, retrieval=None, mode=None, withCont=False, withPlots=False, local=True):
 
         wave  = []
         spec  = []
@@ -37,10 +34,10 @@ class runPSG(object):
         midtime = df_eph['datetime_str'][obs_midpoint]
         print(midtime)
 
-        cfgHelper.ephCFG(specFile,name,objectType,midtime,key)
+        cfgHelper.ephCFG(specFile,name,objectType,midtime,local)
 
         if retrieval != None:
-            cfgHelper.atmCFG(specFile,resFile,composition,retrieval,mode,withCont,key)
+            cfgHelper.atmCFG(specFile,resFile,composition,retrieval,mode,withCont,local)
 
         if withPlots:
             plotPSG.makePlots(resFile,withPlots)

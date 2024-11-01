@@ -9,10 +9,6 @@ from jwstComet.utils import readCube, subchannel_splice, readHeader
 
 class Beam(object):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
     @u.quantity_input(radAp=u.arcsec, xOffset=u.arcsec, yOffset=u.arcsec)
     def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,smooth=None,mask=None,withPlots=False):
         """

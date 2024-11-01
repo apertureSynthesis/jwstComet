@@ -10,10 +10,6 @@ from jwstComet import extraction, utils
 
 class plotCube(object):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    
     def polynomial_fitting(self,wave,spec,order=2,iters=5,nsigma=2.5,withPlots=False):
         """
         Function to remove continuum with a polynomial fit

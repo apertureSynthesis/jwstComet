@@ -11,8 +11,6 @@ class savePSG(object):
     If desired, convert trace species abundances to Q's and save those to a plot, too.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
     
     def saveResults(self, csvFile, retrieval_variables, retrieval_values, retrieval_sigmas, extracts):
         """

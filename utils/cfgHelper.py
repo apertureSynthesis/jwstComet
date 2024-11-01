@@ -2,11 +2,12 @@ import os,sys
 import numpy as np
 from datetime import datetime
 import pandas as pd
+from jwstComet.utils.sendPSG import sendPSG
 
-def ephCFG(specFile,name,objectType,midtime,key=None):
+def ephCFG(specFile,name,objectType,midtime,local=True):
     """
     Writes a CFG file that will request the PSG to return an updated CFG with ephemeris information. 
-    This will be used in the next step to either run a forward model of a retrieval.
+    This will be used in the next step to either run a forward model or a retrieval.
     """
 
     cfgName = specFile[:-3]+'eph.cfg'
@@ -22,15 +23,14 @@ def ephCFG(specFile,name,objectType,midtime,key=None):
         #fn.write('<GEOMETRY-ALTITUDE-UNIT>AU\n')
 
     #Send it to the PSG
-    if key == None:
-        #os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(cfgName,ephName))
-        os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(cfgName,ephName))
-    else:
-        #os.system('curl -d key={} -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(key,cfgName,ephName))
-        os.system('curl -d key={} -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(key,cfgName,ephName))
+    sendPSG(cfgName,ephName,local)
 
 
-def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, key=None):
+def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True):
+    """
+    Read in the ephemeris configuration file from the previous step
+    Translate the input model dictionary and send it to the PSG along with the extracted spectrum
+    """
 
     #Read in the data file
     wave, spec, err = np.loadtxt(specFile, unpack=1)
@@ -274,12 +274,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, key=None):
             fn.write('</DATA>\n')
 
     #Send it to the PSG
-    if key == None:
-        #os.system('curl -d type=ret --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(retName,resFile))
-        os.system('curl -d type=ret --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(retName,resFile))
-    else:
-        #os.system('curl -d key={} -d type=ret --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(key,retName,resFile))
-        os.system('curl -d key={} -d type=ret --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(key,retName,resFile))
+    sendPSG(retName,resFile,local)
 
 
 

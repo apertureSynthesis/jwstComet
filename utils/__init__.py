@@ -5,4 +5,5 @@ from .subchannel_splice import *
 from .readHeader import *
 from .cfgHelper import *
 from .findRadialBins import *
+from .sendPSG import *
 
