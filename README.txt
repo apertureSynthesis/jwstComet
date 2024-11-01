@@ -22,14 +22,21 @@ photutils
 jupyter
 astroquery
 
-Installation:
-Clone the repository and navigate to the jwstComet directory. Included is a .yml file to create a suitable conda environment:
+Installation can use conda or pyenv:
+Clone the repository and navigate to the jwstComet directory. Included is a .yml file to create a suitable conda environment
+or a requirements.txt for pyenv:
 
+For conda:
 conda env create --file jwstComet.yml
 
-Activate the new conda environment, and add the parent directory to your conda path:
+Activate the new conda environment (named jwstComet), and add the parent directory to your conda path:
 
 conda develop /path-to-jwstComet/
+
+For pyenv, after installing pyenv and pyenv-virtualenv:
+pyenv virtualenv 3.11 jwstComet
+pyenv activate jwstComet
+pip install -r requirements.txt
 
 Usage:
 Jupyter notebooks are included to provide examples
