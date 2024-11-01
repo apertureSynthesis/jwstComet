@@ -2,12 +2,11 @@ import os,sys
 import numpy as np
 from datetime import datetime
 import pandas as pd
-from jwstComet.utils.sendPSG import sendPSG
 
 def ephCFG(specFile,name,objectType,midtime,local=True):
     """
     Writes a CFG file that will request the PSG to return an updated CFG with ephemeris information. 
-    This will be used in the next step to either run a forward model or a retrieval.
+    This will be used in the next step to either run a forward model of a retrieval.
     """
 
     cfgName = specFile[:-3]+'eph.cfg'
@@ -23,13 +22,17 @@ def ephCFG(specFile,name,objectType,midtime,local=True):
         #fn.write('<GEOMETRY-ALTITUDE-UNIT>AU\n')
 
     #Send it to the PSG
-    sendPSG(cfgName,ephName,local)
+    if local:
+        os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(cfgName,ephName))
+    else:
+        os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(cfgName,ephName))
+
 
 
 def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True):
     """
-    Read in the ephemeris configuration file from the previous step
-    Translate the input model dictionary and send it to the PSG along with the extracted spectrum
+    Read in the ephemeris CFG file. Incorporate it along with user-defined modeling parameters into a new CFG file.
+    Read in the extracted spectrum and header information. Send it off to the PSG for modeling.
     """
 
     #Read in the data file
@@ -274,7 +277,10 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
             fn.write('</DATA>\n')
 
     #Send it to the PSG
-    sendPSG(retName,resFile,local)
+    if local:
+        os.system('curl -d type=ret --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(retName,resFile))
+    else:
+        os.system('curl -d type=ret --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(retName,resFile))
 
 
 
