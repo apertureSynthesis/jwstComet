@@ -77,7 +77,7 @@ class Beam(object):
             for i in range(dnpts):
                 if smooth != None:
                     sci_img = convolve(data[i,:,:],Box2DKernel(smooth))*u.MJy/u.sr
-                    err_img = convolve(data[i,:,:],Box2DKernel(smooth))*u.MJy/u.sr
+                    err_img = convolve(derr[i,:,:],Box2DKernel(smooth))*u.MJy/u.sr
                 else:
                     sci_img = data[i,:,:]*u.MJy/u.sr
                     err_img = derr[i,:,:]*u.MJy/u.sr
