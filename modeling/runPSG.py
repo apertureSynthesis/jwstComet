@@ -7,7 +7,7 @@ from jwstComet.modeling import plotPSG
 
 class runPSG(object):
 
-    def getModels(self, specFile, resFile, name, objectType, composition=None, retrieval=None, mode=None, withCont=False, withPlots=False, local=True):
+    def getModels(self, specFile, resFile, name, objectType, composition=None, retrieval=None, mode=None, withCont=False, withPlots=False, withEph=True, local=True):
 
         wave  = []
         spec  = []
@@ -21,20 +21,21 @@ class runPSG(object):
                 if '#Obs. End' in line:
                     dateEnd = line.split()[-2] + ' ' + line.split()[-1]
 
-        #Run an ephemeris and get pertinent information
-        #Find the midpoint of the observations
-        obj = Horizons(id = name, id_type = 'designation', location='@JWST',
-                       epochs = {'start':dateBeg, 'stop':dateEnd, 'step':'1m'})
-        eph = obj.ephemerides(quantities = '19,20,23,24', no_fragments=True, closest_apparition=True)
+        if withEph:
+            #Run an ephemeris and get pertinent information
+            #Find the midpoint of the observations
+            obj = Horizons(id = name, id_type = 'designation', location='@JWST',
+                        epochs = {'start':dateBeg, 'stop':dateEnd, 'step':'1m'})
+            eph = obj.ephemerides(quantities = '19,20,23,24', no_fragments=True, closest_apparition=True)
 
-        df_eph = eph.to_pandas()
+            df_eph = eph.to_pandas()
 
-        obs_midpoint = int(len(df_eph)/2.)
-        delta = df_eph['delta'][obs_midpoint]
-        midtime = df_eph['datetime_str'][obs_midpoint]
-        print(midtime)
+            obs_midpoint = int(len(df_eph)/2.)
+            delta = df_eph['delta'][obs_midpoint]
+            midtime = df_eph['datetime_str'][obs_midpoint]
+            print(midtime)
 
-        cfgHelper.ephCFG(specFile,name,objectType,midtime,local)
+            cfgHelper.ephCFG(specFile,name,objectType,midtime,local)
 
         if retrieval != None:
             cfgHelper.atmCFG(specFile,resFile,composition,retrieval,mode,withCont,local)

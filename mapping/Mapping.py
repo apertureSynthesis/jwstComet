@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import astropy.units as u
 import matplotlib.pyplot as plt
+from astropy.io import fits
+from scipy.interpolate import interp1d
 from astropy.convolution import convolve, Box2DKernel
 from photutils.aperture import RectangularAperture, aperture_photometry
 from jwstComet.extraction import Beam
@@ -12,7 +14,7 @@ from jwstComet.utils import readCube
 class Mapping(object):
 
     @u.quantity_input(radAp=u.arcsec)
-    def makeMaps(self,cubeFiles,specStem,csvFile,waveLo,waveUp,radAp,name,objectType,composition,retrieval,withCont=False,smooth=None,box=None,local=True):
+    def makeMaps(self,cubeFiles,specStem,csvFile,waveLo,waveUp,radAp,name,objectType,composition,retrieval,withCont=False,smooth=None,box=None,withEph=True,local=True,tempFix=False,tempFile=None):
         """
         Read in a JWST IFU cube. Find the photocenter. Extract spectra across the
         entire cube. Send them to the PSG for analysis. Plot the model results and extracted spectrum.
@@ -57,6 +59,19 @@ class Mapping(object):
         #Bin factor
         bin_factor =  int(np.round(radAp / psa))
 
+        #If there is a temperature profile provided, read it in and interpolate a model
+        if tempFix:
+            # #Read in Dominique's MIRI temperature extract. Interpolate to a relationship with arcseconds to use for NIRSpec
+            #Read in Dominique's temperature fits
+            dfits = fits.open(tempFile)
+            #temperature
+            para_temps = dfits[3].data
+            #MIRI pixel
+            rho = dfits[1].data
+            #MIRI pixel scale
+            pScale = 0.13*u.arcsec
+            #Interpolate
+            temp_model = interp1d(rho[:len(para_temps)]*pScale.value,para_temps,kind='linear',fill_value=(para_temps[0],para_temps[-1]),bounds_error=False)
 
         #Now extract the spatially binned (if requested) maps
         for x in range(x0, xf):
@@ -68,15 +83,19 @@ class Mapping(object):
                     dxArc = dxPix.to(u.arcsec,pixScale)
                     dyPix = (y - sciCube.ycenter)*u.pixel
                     dyArc = dyPix.to(u.arcsec,pixScale)
+                    drArc = np.sqrt(dxArc.value**2 + dyArc.value**2)
 
+                    if tempFix:
+                        qtemp = temp_model(drArc)
+                        composition['TEMPERATURE']['value'] = qtemp
 
                     #Perform the extract
                     specFile = specStem+'-{:.2f}-arcsecRadAp-{:.1f}-arcsecXoff-{:.1f}-arcsecYoff-{:.2f}um-to-{:.2f}um.txt'.format(radAp.value,dxArc.value,dyArc.value,min(waveLo).value,max(waveUp).value)
                     resFile = specFile[:-3]+'.retrieval-results.txt'
                     beam = Beam()
-                    beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLo=waveLo, waveUp=waveUp, radAp=radAp, xOffset=dxArc, yOffset=dyArc, smooth=smooth)
+                    beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLo=waveLo, waveUp=waveUp, radAp=radAp, xOffset=dxArc, yOffset=dyArc, mode='rectangle', smooth=smooth, withPlots=True)
                     beamModel = runPSG()
-                    beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval=retrieval, mode='beam', withCont=withCont, withPlots=True, local=local)
+                    beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval=retrieval, mode='mapping', withCont=withCont, withPlots=True, withEph=withEph, local=local)
                     
                     try:
                         results = readPSG(resFile)

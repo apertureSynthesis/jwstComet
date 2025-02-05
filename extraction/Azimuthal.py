@@ -65,7 +65,7 @@ class Azimuthal(object):
             #Define the aperture
             apCen = (sciCube.xcenter,sciCube.ycenter)
             if innerRadPix == 0:
-                apEx = CircularAperture(apCen, r = outerRadPix.value/2.)
+                apEx = CircularAperture(apCen, r = outerRadPix.value)
             else:
                 apEx = CircularAnnulus(apCen, r_in = innerRadPix.value, r_out = outerRadPix.value)
 

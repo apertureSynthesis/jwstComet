@@ -6,7 +6,7 @@ import pandas as pd
 def ephCFG(specFile,name,objectType,midtime,local=True):
     """
     Writes a CFG file that will request the PSG to return an updated CFG with ephemeris information. 
-    This will be used in the next step to either run a forward model of a retrieval.
+    This will be used in the next step to either run a forward model or a retrieval.
     """
 
     cfgName = specFile[:-3]+'eph.cfg'
@@ -208,6 +208,9 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                         innerRadius = float(line.split()[-1])
                     if '#Outer annulus radius (arcsec)' in line:
                         outerRadius = float(line.split()[-1])
+                    if '#Aperture size (arcsec)' in line:
+                        radWidth = float(line.split()[-2])
+                        radHeight = float(line.split()[-1])
             #Work out resolution from dictionary
             if instrument == 'NIRSPEC':
                 res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
@@ -215,14 +218,20 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                 res_element = resolution[instrument][grating]
             fn.write('<GENERATOR-RESOLUTION>{}\n'.format(res_element))
             fn.write('<GENERATOR-RESOLUTIONUNIT>um\n')
-            if mode == 'beam':
+            if mode == 'circle':
                 fn.write('<GENERATOR-BEAM>{}\n'.format(2*radAp))
                 fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset))
                 fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')
+            if mode == 'rectangle':
+                fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(radWidth,radHeight))
+                fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
+                fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset))
+                fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset))
+                fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')
             if mode == 'mapping':
-                fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(psa,psa))
+                fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(radAp,radAp))
                 fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset))
                 fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset))
@@ -233,7 +242,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                 if '#Outer annulus radius (arcsec)' in line:
                     outerRadius = float(line.split()[-1])
                 if innerRadius == 0:
-                    fn.write('<GENERATOR-BEAM>{}\n'.format(outerRadius))
+                    fn.write('<GENERATOR-BEAM>{}\n'.format(2*outerRadius))
                     fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 else:
                     fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(psa,outerRadius - innerRadius))

@@ -4,13 +4,13 @@ import astropy.units as u
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy.convolution import convolve, Box2DKernel
-from photutils.aperture import CircularAperture, aperture_photometry
+from photutils.aperture import CircularAperture, RectangularAperture, aperture_photometry
 from jwstComet.utils import readCube, subchannel_splice, readHeader
 
 class Beam(object):
 
     @u.quantity_input(radAp=u.arcsec, xOffset=u.arcsec, yOffset=u.arcsec)
-    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,smooth=None,mask=None,withPlots=False):
+    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,mode='circle',smooth=None,mask=None,withPlots=False):
         """
         Extract a spectrum at the specified position and save it to a text file.
         Plot the aperture and extracted spectrum if desired
@@ -60,15 +60,21 @@ class Beam(object):
 
             print('Center coordinates are ({:d},{:d})'.format(sciCube.xcenter,sciCube.ycenter))
 
-            #Convert aperture radius, horizontal and vertical offsets from arcseconds to pixels
+            #Convert horizontal and vertical offsets from arcseconds to pixels
             pixscale = u.pixel_scale(psa/u.pixel)
-            radpix = (radAp).to(u.pixel,pixscale)
             xOffpix  = (xOffset).to(u.pixel,pixscale)
             yOffpix  = (yOffset).to(u.pixel,pixscale)
 
             #Define the aperture
-            apCen = (sciCube.xcenter+xOffpix.value, sciCube.ycenter+yOffpix.value)
-            apEx  = CircularAperture(apCen, r = radpix.value)
+            if mode == 'circle':
+                radpix = (radAp).to(u.pixel,pixscale)
+                apCen = (sciCube.xcenter+xOffpix.value, sciCube.ycenter+yOffpix.value)
+                apEx  = CircularAperture(apCen, r = radpix.value)
+            if mode == 'rectangle':
+                wpix = (radAp[0]).to(u.pixel,pixscale)
+                hpix = (radAp[1]).to(u.pixel,pixscale)
+                apCen = (sciCube.xcenter+xOffpix.value, sciCube.ycenter+yOffpix.value)
+                apEx = RectangularAperture(apCen, w=wpix.value, h=hpix.value)
 
             #Perform the extraction, one spectral pixel at a time
             spec = np.zeros(dnpts)
@@ -147,7 +153,10 @@ class Beam(object):
             fn.write('#Spectral plate scale (um) {}\n'.format(dwv))
             fn.write('#Center pixel for extract (x,y) = {},{}\n'.format(sciCube.xcenter,sciCube.ycenter))
             fn.write('#Pixel scale (arcsec/pixel) {}\n'.format(psa.value))
-            fn.write('#Aperture radius (arcsec) {}\n'.format(radAp.value))
+            if mode == 'circle':
+                fn.write('#Aperture radius (arcsec) {}\n'.format(radAp.value))
+            if mode == 'rectangle':
+                fn.write('#Aperture size (arcsec) {} {}\n'.format(radAp[0].value,radAp[1].value))
             fn.write('#X offset (arcsec) {}\n'.format(xOffset.value))
             fn.write('#Y offset (arcsec) {}\n'.format(yOffset.value))
             fn.write('#Wave (micron) Flux (Jy) Noise (Jy)\n')
@@ -162,5 +171,8 @@ class Beam(object):
             axes.errorbar(wvls[wv_region],spec[wv_region],sigma[wv_region],ecolor='r')
             axes.set_xlabel('Wavelength ($\mu$m)')
             axes.set_ylabel('Flux (Jy)')
-            axes.set_title('Extracted Spectrum for {:.2f} radius aperture\n xOffset = {:.2f}, yOffset = {:.2f}'.format(radAp,xOffset,yOffset))
+            if mode == 'circle':
+                axes.set_title('Extracted Spectrum for {:.2f} radius aperture\n xOffset = {:.2f}, yOffset = {:.2f}'.format(radAp,xOffset,yOffset))
+            if mode == 'rectangle':
+                axes.set_title('Extracted Spectrum for {:.2f} x {:.2f} radius aperture\n xOffset = {:.2f}, yOffset = {:.2f}'.format(radAp[0],radAp[1],xOffset,yOffset))
             plt.show()
