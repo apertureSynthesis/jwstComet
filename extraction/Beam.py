@@ -75,6 +75,7 @@ class Beam(object):
                 hpix = (radAp[1]).to(u.pixel,pixscale)
                 apCen = (sciCube.xcenter+xOffpix.value, sciCube.ycenter+yOffpix.value)
                 apEx = RectangularAperture(apCen, w=wpix.value, h=hpix.value)
+                #apMask = apEx.to_mask(method='exact',subpixels=5)
 
             #Perform the extraction, one spectral pixel at a time
             spec = np.zeros(dnpts)
@@ -87,7 +88,8 @@ class Beam(object):
                 else:
                     sci_img = data[i,:,:]*u.MJy/u.sr
                     err_img = derr[i,:,:]*u.MJy/u.sr
-                apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='subpixel', subpixels=5)
+                #apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='subpixel', subpixels=5)
+                apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='exact', subpixels=5)
 
                 flux_jy = (apPhot['aperture_sum'][0]*psrScale).to(u.Jy/u.pixel)
                 noise_jy = (apPhot['aperture_sum_err'][0]*psrScale).to(u.Jy/u.pixel)
@@ -102,6 +104,11 @@ class Beam(object):
                 axes[0].plot(sciCube.xcenter,sciCube.ycenter,marker='+',markersize=8,color='r')
                 axes[0].set_title('Extraction Region for Cube #{}'.format(j))
                 apEx.plot(ax=axes[0], color='red',lw=2)
+
+
+                #axes[1].imshow(cdata,origin='lower',cmap='viridis',interpolation='none')                
+                #axes[1].imshow(apMask,origin='lower',cmap='binary',interpolation='none')
+                #apEx.plot(ax=axes[1],color='red',lw=2)
 
                 axes[1].plot(wvls,spec)
                 axes[1].set_xlabel('Wavelength ($\mu$m)')

@@ -57,7 +57,8 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
         'C2H2':     {'quiet': 3.269e4, 'active': 1.691e4, 'alias': 'C2H2'},
         'CN':       {'quiet': '1.3e4 2.1e5', 'active': '1.3e4 2.1e5', 'alias': 'CN'},
         'NH2':      {'quiet': '4.1e3 6.2e4', 'active': '4.1e3 6.2e4', 'alias': 'NH2'},
-        'H2CO-Daughter': {'quiet': '1.428e3 4.649e3', 'active': '1.428e3 4.369e3', 'alias': 'H2CO'}
+        'H2CO-Daughter': {'quiet': '1.428e3 4.649e3', 'active': '1.428e3 4.369e3', 'alias': 'H2CO'},
+        'NH':       {'quiet': '5.0e4 1.5e5', 'active': '5.0e4 1.5e5', 'alias': 'NH'}
     }
 
     #Dictionary of spectral resolutions
@@ -74,22 +75,22 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
             'G395H/F290LP': {'low': 2.88/1927., 'high': 5.20/3613.}
         },
         'MIRI':{
-            '1/SHORT': 0.0009,
-            '1/MEDIUM': 0.0011,
-            '1/LONG': 0.0012,
-            '2/SHORT': 0.0014,
-            '2/MEDIUM': 0.0016,
-            '2/LONG': 0.0019,
-            '3/SHORT': 0.0021,
-            '3/MEDIUM': 0.0025,
-            '3/LONG': 0.0029,
-            '4/SHORT': 0.0035,
-            '4/MEDIUM': 0.0042,
-            '4/LONG': 0.0049,
-            '1/MULTIPLE': 0.00105,
-            '2/MULTIPLE': 0.00165,
-            '3/MULTIPLE': 0.0025,
-            '4/MULTIPLE': 0.0042
+            '1/SHORT': {'low': 4.885/3400, 'high': 5.751/4000},
+            '1/MEDIUM': {'low': 5.634/3420, 'high': 6.632/3990},
+            '1/LONG': {'low': 6.408/3330, 'high': 7.524/3840},
+            '2/SHORT': {'low': 7.477/3190, 'high': 8.765/3620},
+            '2/MEDIUM': {'low': 8.711/3040, 'high': 10.228/3530},
+            '2/LONG': {'low': 10.017/2890, 'high': 11.753/3374},
+            '3/SHORT': {'low': 11.481/2450, 'high': 13.441/3010},
+            '3/MEDIUM': {'low': 13.319/2300, 'high': 15.592/2460},
+            '3/LONG': {'low': 15.400/2020, 'high': 18.072/2790},
+            '4/SHORT': {'low':  17.651/1400, 'high': 20.93/1960},
+            '4/MEDIUM': {'low': 20.417/1660, 'high': 24.220/1730},
+            '4/LONG': {'low': 23.884/1340, 'high': 28.329/1520},
+            '1/MULTIPLE': {'low': 4.885/3400, 'high': 7.524/3840},
+            '2/MULTIPLE': {'low': 7.477/3190, 'high': 11.753/3374},
+            '3/MULTIPLE': {'low': 11.481/2450, 'high': 18.072/2790},
+            '4/MULTIPLE': {'low': 17.651/1400, 'high': 28.329/1520}
         }
     }
 
@@ -213,11 +214,21 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                         radHeight = float(line.split()[-1])
             #Work out resolution from dictionary
             if instrument == 'NIRSPEC':
-                res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
+                if grating == 'G395M/F290LP':
+                    res_element = np.sqrt(2*np.log(2))*2*0.001440
+                elif grating == 'G395H/F290LP':
+                    res_element = np.sqrt(2*np.log(2))*2*1.904e-4
+                else:
+                    res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
+                res_type = 'um'
             elif instrument == 'MIRI':
-                res_element = resolution[instrument][grating]
+                if '1/' in grating:
+                    res_element = np.sqrt(2*np.log(2))*2*0.000828
+                else:
+                    res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
+                res_type = 'um'
             fn.write('<GENERATOR-RESOLUTION>{}\n'.format(res_element))
-            fn.write('<GENERATOR-RESOLUTIONUNIT>um\n')
+            fn.write('<GENERATOR-RESOLUTIONUNIT>{}\n'.format(res_type))
             if mode == 'circle':
                 fn.write('<GENERATOR-BEAM>{}\n'.format(2*radAp))
                 fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
