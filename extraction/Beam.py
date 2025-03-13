@@ -9,23 +9,37 @@ from jwstComet.utils import readCube, subchannel_splice, readHeader
 
 class Beam(object):
 
+    def __init__(self):
+        super().__init__()
+        self.name = self.__class__.__name__
+
     @u.quantity_input(radAp=u.arcsec, xOffset=u.arcsec, yOffset=u.arcsec)
     def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,mode='circle',smooth=None,mask=None,withPlots=False):
         """
         Extract a spectrum at the specified position and save it to a text file.
         Plot the aperture and extracted spectrum if desired
+
+        Inputs
+            cubeFiles - array of file paths pointing to the *s3d.fits datacube files from which we want to extract a spectrum
+            specFile - name of the output file containing the extracted spectrum
+            waveLo - lowest wavelength for extraction. preferred unit is microns. can be a list or single value
+            waveUp - highest wavelength for extraction. preferred unit is microns. can be a list or single value
+            radAp - radius of the circular extraction aperture (arcsec) or [x,y] lengths of the rectangular extraction aperture (arcsec,arcsec)
+            xOffset - horizontal offset of the center of the extraction aperture from the photocenter in arcseconds
+            yOffset - vertical offset of the center of the extraction aperture from the photocenter in arcseconds
+            mode - extraction mode/aperture shape. options are 'circle' or 'rectangle'
+            smooth - kernel length for Box2DKernel smoothing of the cube. optional.
+            mask - dictionary containing lower and upper wavelength range to be masked. optional
+            withPlots - whether we plot the results. optional
+
+        Outputs
+            Saves an ASCII file containing the extracted spectrum and header information. Optionally shows (but does not save) plots.
         """
         if type(waveLo) is not list:
             waveLo = [waveLo]
         
         if type(waveUp) is not list:
             waveUp = [waveUp]
-
-        # try:
-        #     if waveLo.value >= waveUp.value:
-        #         raise ValueError('Lower wavelength must be smaller than upper wavelength')
-        # except (ValueError):
-        #     exit('Update wavelength range')
 
         combined_waves = []
         combined_specs = []
@@ -106,10 +120,6 @@ class Beam(object):
                 apEx.plot(ax=axes[0], color='red',lw=2)
 
 
-                #axes[1].imshow(cdata,origin='lower',cmap='viridis',interpolation='none')                
-                #axes[1].imshow(apMask,origin='lower',cmap='binary',interpolation='none')
-                #apEx.plot(ax=axes[1],color='red',lw=2)
-
                 axes[1].plot(wvls,spec)
                 axes[1].set_xlabel('Wavelength ($\mu$m)')
                 axes[1].set_ylabel('Flux (Jy)')
@@ -128,7 +138,6 @@ class Beam(object):
 
 
         #Only extract the wavelength region of interest
-        #wv_region = np.where((wvls>waveLo.value) & (wvls<waveUp.value))
         wv_region = []
         for waveLo, waveUp in zip(waveLo,waveUp):
             wvr = np.where((wvls>waveLo.value) & (wvls<waveUp.value))

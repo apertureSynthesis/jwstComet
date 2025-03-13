@@ -13,12 +13,39 @@ from jwstComet.utils import readCube
 
 class Mapping(object):
 
+    def __init__(self):
+        super().__init__()
+        self.name = self.__class__.__name__
+
     @u.quantity_input(radAp=u.arcsec)
     def makeMaps(self,cubeFiles,specStem,csvFile,waveLo,waveUp,radAp,name,objectType,composition,retrieval,withCont=False,smooth=None,box=None,withEph=True,local=True,tempFix=False,tempFile=None):
         """
         Read in a JWST IFU cube. Find the photocenter. Extract spectra across the
-        entire cube. Send them to the PSG for analysis. Plot the model results and extracted spectrum.
+        entire cube. Send them to the PSG for analysis. Plot the model and extracted spectrum.
         Save the results to a CSV file.
+
+        Inputs
+            cubeFiles - array of file paths pointing to the *s3d.fits datacube files from which we want to extract a spectrum
+            specStem - stem for extracted spectra output file names
+            csvFile - name of CSV file for saving pixel-by-pixel results
+            waveLo - lowest wavelength for extraction. preferred unit is microns. can be a list or single value
+            waveUp - highest wavelength for extraction. preferred unit is microns. can be a list or single value
+            radAp - radius of the circular extraction aperture (arcsec) or [x,y] lengths of the rectangular extraction aperture (arcsec,arcsec)
+            name - name of the comet or asteroid
+            objectType - type of small body: comet or asteroid
+            composition - dictionary containing compositional information for building the PSG model atmosphere
+            retrieval - dictionary containing quantities to be retrieved for each PSG model run
+            withCont - whether we are asking the PSG to simulate the continuum or instead simply subtract a baseline
+            smooth - kernel length for Box2DKernel smoothing of the cube. optional.
+            box - length of a box to crop the image around the photocenter. optional
+            withEph - whether we are asking the PSG to retrieve ephemeris parameters or are instead using a local copy.
+            local - are we interrogating a local copy of the PSG or instead sending requests to the online server
+            tempFix - are we fixing the temperature to pre-determined values? optional
+            tempFile - FITS file containing temperature values (as function of pixel index) if using prefixed values
+
+        Outputs
+            Saves an ASCII file containing the extracted spectrum and header information at each pixel. Saves the PSG model files from each pixel. 
+            Saves a CSV file containing the retrieved values and uncertainties at each pixel. Optionally shows (but does not save) plots.
         """
         if type(waveLo) is not list:
             waveLo = [waveLo]
@@ -49,20 +76,16 @@ class Mapping(object):
         retrieval_values      = []
         retrieval_sigmas      = []
 
-        #Work out how much we are spatially binning the results
         #Solid angle subtended by a square pixel (steradians)
         psr = sciCube.hdr['PIXAR_SR']*u.sr
         #Convert to pixel side length in arcseconds
         psa = np.sqrt(psr.to(u.arcsec**2))
         #Assign a pixel scale for conversion between pixels and arcseconds
         pixScale = u.pixel_scale(psa/u.pixel)
-        #Bin factor
-        bin_factor =  int(np.round(radAp / psa))
 
         #If there is a temperature profile provided, read it in and interpolate a model
         if tempFix:
-            # #Read in Dominique's MIRI temperature extract. Interpolate to a relationship with arcseconds to use for NIRSpec
-            #Read in Dominique's temperature fits
+            #Read in a temperature profile stored in a FITS file. Create an interpolated model. May need to change pixel scale - this assumes the temperature profile comes from MIRI/CH1
             dfits = fits.open(tempFile)
             #temperature
             para_temps = dfits[3].data
@@ -143,143 +166,13 @@ class Mapping(object):
                     except:
                         pass
 
-    def makeImage(self,cubeFiles,specStem,csvFile,waveLo,waveUp,smooth=None,box=None,waveContLos=None,waveContUps=None):
-        """
-        Plot an integrated intensity map. Subtract continuum if desired.
-        Save results to a CSV and PDF
-        """
-
-        if type(waveLo) is not list:
-            waveLo = [waveLo]
-
-        if type(waveUp) is not list:
-            waveUp = [waveUp]
-
-        if (waveContLos is not None) & (type(waveContLos) is not list):
-            waveContLos = [waveContLos]
-
-        if (waveContLos is not None) & (type(waveContLos) is not list):
-            waveContLos = [waveContLos]
-
-        #Read in the first cube to serve as a coordinate reference
-        sciCube = readCube(cubeFiles[0])
-
-        #Crop a portion if desired
-        if box != None:
-            x0 = sciCube.xcenter - box
-            xf = sciCube.xcenter + box
-            y0 = sciCube.ycenter - box
-            yf = sciCube.ycenter + box
-        else:
-            x0 = 0
-            xf = sciCube.xs
-            y0 = 0
-            yf = sciCube.ys
-
-        retrieval_x_indexes   = []
-        retrieval_x_offsets   = []
-        retrieval_y_indexes   = []
-        retrieval_y_offsets   = []
-        retrieval_values      = []
-        retrieval_sigmas      = []
-
-        #Work out how much we are spatially binning the results
-        #Solid angle subtended by a square pixel (steradians)
-        psr = sciCube.hdr['PIXAR_SR']*u.sr
-        #Convert to pixel side length in arcseconds
-        psa = np.sqrt(psr.to(u.arcsec**2))
-        #Assign a pixel scale for conversion between pixels and arcseconds
-        pixScale = u.pixel_scale(psa/u.pixel)
-
-        #Build the spectral axis
-        wv0 = sciCube.hdr['CRVAL3']
-        dwv = sciCube.hdr['CDELT3']
-
-        #Generate the wavelength array
-        dnpts = sciCube.data.shape[0]
-        wvls = np.arange(dnpts)*dwv + wv0
-
-        #smooth if desired
-        if smooth != None:
-            cdata = convolve(sciCube.cdata,Box2DKernel(smooth))
-           
-        #Now extract the spatially binned (if requested) maps
-        for x in range(x0, xf):
-            for y in range(y0, yf):
-                #Check whether we are on the chip
-                if sciCube.wmap[50,y,x] != 0:
-                    #Calculate x_offset and y_offset in arcseconds
-                    dxPix = (x - sciCube.xcenter)*u.pixel
-                    dxArc = dxPix.to(u.arcsec,pixScale)
-                    dyPix = (y - sciCube.ycenter)*u.pixel
-                    dyArc = dyPix.to(u.arcsec,pixScale)
-
-                    apEx = RectangularAperture((y,x),w=1,h=1)
-
-                    #Perform the extraction, one spectral pixel at a time
-                    spec = np.zeros(dnpts)
-                    sigma = np.zeros(dnpts)
-
-                    for i in range(dnpts):
-                        if smooth != None:
-                            sci_img = convolve(data[i,:,:],Box2DKernel(smooth))*u.MJy/u.sr
-                            err_img = convolve(data[i,:,:],Box2DKernel(smooth))*u.MJy/u.sr
-                        else:
-                            sci_img = data[i,:,:]*u.MJy/u.sr
-                            err_img = derr[i,:,:]*u.MJy/u.sr
-                        apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='subpixel', subpixels=5)
-
-                        flux_jy = (apPhot['aperture_sum'][0]*psrScale).to(u.Jy/u.pixel)
-                        noise_jy = (apPhot['aperture_sum_err'][0]*psrScale).to(u.Jy/u.pixel)
-
-                        spec[i] = flux_jy.value
-                        sigma[i] = noise_jy.value    
-
-
-                    #Subtract continuum
-                    if (waveContLos is not None) & (waveContUps is not None):
-                        cont_region = []
-                        for waveContLo, waveContUp in zip(waveContLos, waveContUps):
-                            cwv = np.where((wvls>waveContLo.value) & (wvls<waveContUp.value))
-                            cont_region = np.concatenate((cont_region,cwv[0]))
-                        
-                        #Find the median value of the continuum
-                        cont_med = np.nanmedian(spec[cont_region])
-
-                        spec -= cont_med
-
-                    #Save to a file
-                    #Perform the extract
-                    specFile = specStem+'-{:.1f}-arcsecXoff-{:.1f}-arcsecYoff-{:.2f}um-to-{:.2f}um.txt'.format(dxArc.value,dyArc.value,min(waveLo).value,max(waveUp).value)
-
-                    #Save to a file
-                    #Get header observation information
-                    obsInfo = readHeader(cubeFiles[0])
-                    with open(specFile, 'w') as fn:
-                        #Create headers with extract information
-                        fn.write('#Target name {}\n'.format(obsInfo.target))
-                        fn.write('#Obs. Start {} {}\n'.format(obsInfo.dateBeg,obsInfo.timeBeg))
-                        fn.write('#Obs. End {} {}\n'.format(obsInfo.dateEnd,obsInfo.timeEnd))
-                        fn.write('#Instrument used {}\n'.format(obsInfo.instrument))
-                        fn.write('#Grating used {}\n'.format(obsInfo.setting))
-                        fn.write('#Lower wavelength (um) {}\n'.format(waveLo.value))
-                        fn.write('#Upper wavelength (um) {}\n'.format(waveUp.value))
-                        fn.write('#Spectral plate scale (um) {}\n'.format(dwv))
-                        fn.write('#Center pixel for extract (x,y) = {},{}\n'.format(sciCube.xcenter,sciCube.ycenter))
-                        fn.write('#Pixel scale (arcsec/pixel) {}\n'.format(psa.value))
-                        fn.write('#Aperture radius (arcsec) {}\n'.format(radAp.value))
-                        fn.write('#X offset (arcsec) {}\n'.format(xOffset.value))
-                        fn.write('#Y offset (arcsec) {}\n'.format(yOffset.value))
-                        fn.write('#Wave (micron) Flux (Jy) Noise (Jy)\n')
-
-                        for w, s, e in zip(wvls[wv_region],spec[wv_region],sigma[wv_region]):
-                            fn.write('{} {} {}\n'.format(w,s,e))                    
-
-
 
     def plotMaps(self,csvFile):
         """
-        Plot out the results of a map for each retrieved value
+        Plot out the results of a map for each retrieved value.
+
+        Inputs
+            csvFile - file containing the retrieved values and sigmas at each pixel to be mapped
         """
 
         #Read in the saved results

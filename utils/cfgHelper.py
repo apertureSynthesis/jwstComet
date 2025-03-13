@@ -3,23 +3,38 @@ import numpy as np
 from datetime import datetime
 import pandas as pd
 
+"""
+Set of functions to facilitate writing and sending configuration (CFG) files for PSG runs
+"""
+
 def ephCFG(specFile,name,objectType,midtime,local=True):
     """
-    Writes a CFG file that will request the PSG to return an updated CFG with ephemeris information. 
+    Writes a CFG file that will request the PSG to return a new CFG with ephemeris information. 
     This will be used in the next step to either run a forward model or a retrieval.
+
+    Inputs
+        specFile - ASCII file containing the extracted spectrum
+        name - name of asteroid or comet
+        objectType - type of object, either asteroid or comet
+        midtime - midpoint time of the observations
+        local - whether we are interrogating a locally installed copy of the PSG
+
+    Outputs
+        Relevant configuration files
     """
 
+    #Name of CFG file for requesting the ephemeris parameters
     cfgName = specFile[:-3]+'eph.cfg'
+    #Name of CFG file for storing the ephemeris parameters for use in later steps
     ephName = specFile[:-3]+'atm.cfg'
 
-    #Write the CFG file with basic info
+    #Write the CFG file with basic info from the file header
     with open(cfgName, 'w') as fn:
         fn.write('<OBJECT>{}\n'.format(objectType))
         fn.write('<OBJECT-NAME>{}\n'.format(name))
         fn.write('<OBJECT-DATE>{}\n'.format(datetime.strptime(midtime, "%Y-%b-%d %H:%M:%S.%f").strftime("%Y/%m/%d %H:%M")))
         fn.write('<GEOMETRY>Observatory\n')
-        #fn.write('<GEOMETRY-OBS-ALTITUDE>{}\n'.format(delta))
-        #fn.write('<GEOMETRY-ALTITUDE-UNIT>AU\n')
+
 
     #Send it to the PSG
     if local:
@@ -33,11 +48,21 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
     """
     Read in the ephemeris CFG file. Incorporate it along with user-defined modeling parameters into a new CFG file.
     Read in the extracted spectrum and header information. Send it off to the PSG for modeling.
+
+    Inputs
+        specFile - ASCII file containing the spectrum to be analyzed
+        resFile - ASCII file for saving the returned results from the PSG
+        composition - dictionary containing compositional information for building the PSG model atmosphere. optional
+        retrieval - dictionary containing quantities to be retrieved for each PSG model run. optional.
+        mode - extraction mode (circle, rectangle, mapping, azimuthal)
+        withCont - whether we are asking the PSG to simulate the continuum or instead simply subtract a baseline
+
+    Outputs
+        PSG CFG file containing all parameters, data, and information necessary to run a forward model or retrieval
     """
 
     #Read in the data file
     wave, spec, err = np.loadtxt(specFile, unpack=1)
-
 
     #Dictionary of solar photolysis lifetimes
     solar_lifetimes = {
@@ -126,7 +151,6 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                     fn.write(modified_line)
                 elif '<ATMOSPHERE-TYPE>' in line:
                     models = ['GSFC[' + solar_lifetimes[i]['alias'] + ']' for i in gases]
-                    #models = ['GSFC[' + i + ']' for i in gases]
                     model_list = ','.join(models)
                     modified_line = '<ATMOSPHERE-TYPE>{}\n'.format(model_list)
                     fn.write(modified_line)
@@ -185,14 +209,11 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
             fn.write('<GENERATOR-RESOLUTIONKERNEL>Y\n')
             fn.write('<GENERATOR-TRANS>02-01\n')
 
-
             #Add in geometric factors such as offsets and wavelength ranges
             fn.write('<GENERATOR-RANGE1>{}\n'.format(wave[0]))
             fn.write('<GENERATOR-RANGE2>{}\n'.format(wave[-1]))
             with open(specFile) as sf:
                 for _, line in enumerate(sf):
-                    # if '#Spectral plate scale (um)' in line:
-                    #     res_element = float(line.split()[-1])
                     if '#Instrument used' in line:
                         instrument = line.split()[-1]
                     if '#Grating used' in line:

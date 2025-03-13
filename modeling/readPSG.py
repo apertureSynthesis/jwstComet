@@ -1,9 +1,18 @@
 class readPSG(object):
     """
     Read a PSG returned retrieval file
+
+    Inputs
+        resFile - ASCII file containing the PSG retrieval results
+
+    Outputs
+        returns list of retrieved variables, values, and uncertainties contained in the file
     """
 
+
     def __init__(self, resFile):
+        super().__init__()
+        self.name = self.__class__.__name__
         self.resFile = resFile
         self.retrieval_variables, self.retrieval_values, self.retrieval_sigmas = self.readResults()
 

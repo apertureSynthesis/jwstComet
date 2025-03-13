@@ -8,28 +8,34 @@ from jwstComet.utils import readCube, subchannel_splice, readHeader
 
 class Azimuthal(object):
 
+    def __init__(self):
+        super().__init__()
+        self.name = self.__class__.__name__
+
     @u.quantity_input(innerRadius = u.arcsec, outerRadius = u.arcsec)
     def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,innerRadius=0.0*u.arcsec,outerRadius=0.1*u.arcsec,mask=None,withPlots=False,split=None):
         """
         Extract a spectrum within a specified annulus, take the azimuthal average, and save it to a text file.
         Plot the aperture and extracted spectrum if desired.
+        
+        Inputs
+            cubeFiles - array of file paths pointing to the *s3d.fits datacube files from which we want to extract a spectrum
+            specFile - name of the output file containing the extracted spectrum
+            waveLo - lowest wavelength for extraction. preferred unit is microns. can be a list or single value
+            waveUp - highest wavelength for extraction. preferred unit is microns. can be a list or single value
+            innerRadius - inner radius (arcsec) for the annulus
+            outerRadius - outer radius (arcsec) for the annulus
+            mask - dictionary containing lower and upper wavelength range to be masked. optional
+            withPlots - whether we plot the results. optional
+            split - whether we split the array and only analyze a subsection. choices are 'upper', 'lower', 'left', 'right'. optional
+
+        Outputs
+            Saves an ASCII file containing the extracted spectrum and header information. Optionally shows (but does not save) plots.
         """
         if type(waveLo) is not list: 
             waveLo = [waveLo]
         if type(waveUp) is not list: 
             waveUp = [waveUp]
-        # try:
-        #     if waveLo.value >= waveUp.value:
-        #         raise ValueError('Lower wavelength must be smaller than upper wavelength')
-        # except (ValueError):
-        #     exit('Update wavelength range')
-
-        try:
-            if innerRadius.value >= outerRadius.value:
-                raise ValueError('Inner annulus radius must be smaller than outer annulus radius')
-        except (ValueError):
-            exit('Update inner/outer annulus radii')
-
 
         combined_waves = []
         combined_specs = []
@@ -132,7 +138,6 @@ class Azimuthal(object):
             wvls, spec, sigma = subchannel_splice(combined_waves, combined_specs, combined_sigmas)
 
         #Only extract the wavelength region of interest
-        #wv_region = np.where((wvls>waveLo.value) & (wvls<waveUp.value))
         wv_region = []
         for waveLo, waveUp in zip(waveLo,waveUp):
             wvr = np.where((wvls>waveLo.value) & (wvls<waveUp.value))

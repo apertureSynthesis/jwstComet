@@ -5,9 +5,27 @@ from astropy.stats import sigma_clip
 class readCube(object):
     """
     Reads a JWST IFU cube. Returns key quantities from the cube, including data and header information.
+
+    Inputs
+        cubeFile - FITS file containing the datacube
+
+    Outputs
+        data - 3D spectral cube data
+        derr - 3D uncertainty cube
+        qty - 3D quality cube
+        wmap - 3D cube for whether pixel is on the detector
+        cdata - 2D spectrally integrated cube data
+        xcenter - horizontal pixel coordinate of photocenter
+        xs - horizontal size of the array
+        ycenter - vertical pixel coordinate of the photocenter
+        ys - vertical size of the array
+        hdr - header information from the cube
+
     """
 
     def __init__(self, cubeFile):
+        super().__init__()
+        self.name = self.__class__.__name__
         self.cubeFile = cubeFile
         self.data, self.derr, self.qty, self.wmap, self.cdata, self.xcenter, self.xs, self.ycenter, self.ys, self.hdr = self.returnCube()
 

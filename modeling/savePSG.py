@@ -15,14 +15,18 @@ class savePSG(object):
     def saveResults(self, csvFile, retrieval_variables, retrieval_values, retrieval_sigmas, extracts):
         """
         Save PSG results to a CSV file
+        
+        Inputs
+            csvFile - name of CSV file for saving results
+            retrieval_variables - list of retrieved variables from PSG
+            retrieval_values - list of retrieved values for each variable
+            retrieval_sigmas - list of retrieved uncertainties for each variable
+            extracts - location of each spectral extract
         """
 
         #Create dataframe to store
         df = pd.DataFrame()
 
-        #Calculate extract offset positions in km at the comet
-        #dist = [(delta).to(u.km)*np.tan(i.to(u.rad)) for i in extracts]
-        #extract_dist = [i.value for i in dist]
 
         df['Distance (arcsec)'] = extracts
 
@@ -45,6 +49,11 @@ class savePSG(object):
 
         """
         Plot the native profiles retrieved by PSG for each variable
+
+        Inputs
+            csvFile - name of CSV file for saving results
+            plotFile - name of file to save the plots
+            plotTitle - name of title for the plot
         """
 
         #Read in the csv file with the results

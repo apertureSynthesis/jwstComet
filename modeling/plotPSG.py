@@ -1,9 +1,16 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def makePlots(retFile,withPlots):
+def makePlots(retFile,withPlots=False):
     """
     Reads a PSG retrieval result file. Provides a model-data comparison plot if desired
+
+    Inputs
+        retFile - ASCII file containing the retrieval results
+        withPlots - whether to plot the model-data comparison
+
+    Outputs
+        If desired, shows (but not saves) plots
     """
     #Plot the model-data fit if desired
     if withPlots:
@@ -12,6 +19,7 @@ def makePlots(retFile,withPlots):
         dspec = []
         model = []
         base  = []
+        #Read the file line by line
         with open(retFile, 'r') as fn:
             for line in fn:
                 if 'results_dat.txt' in line:

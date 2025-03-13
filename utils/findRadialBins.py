@@ -5,8 +5,21 @@ from jwstComet.utils import readCube
 
 class findRadialBins(object):
 
-    def __init__(self, cubefile, annulusWidth=0.1*u.arcsec):
-        self.cubefile = cubefile
+    """
+    Class to find the number and location of radial bins of a given with centered on the photocenter
+
+    Inputs
+        cubeFile - FITS file containing the datacube
+        annulusWidth - annulus width in arcsec
+
+    Outputs
+        list of inner, mid, and outer radii for the annuli
+    """
+
+    def __init__(self, cubeFile, annulusWidth=0.1*u.arcsec):
+        super().__init__()
+        self.name = self.__class__.__name__
+        self.cubefile = cubeFile
         self.annulusWidth = annulusWidth
         self.r_ins, self.r_outs, self.r_mids = self.generateAnnuli()
 
