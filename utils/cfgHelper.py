@@ -175,6 +175,12 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                     lifetime_list = ','.join(lifetimes)
                     modified_line = '<ATMOSPHERE-TAU>{}\n'.format(lifetime_list)
                     fn.write(modified_line)
+                elif '<ATMOSPHERE-CONTINUUM>' in line:
+                    if retrieval['COMA-OPACITY'] == 'thin':
+                        modified_line = line + ',FluorThin'
+                    else:
+                        modified_line = line
+                    fn.write(modified_line)
                 elif '<OBJECT-DIAMETER>' in line:
                     continue
                 else:
@@ -309,10 +315,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
             fn.write('<DATA>\n')
             for i in range(len(wave)):
                 if not np.isnan(spec[i]):
-                    if retrieval['COMA-OPACITY'] == 'thin':
-                        fn.write('{} {} {}\n'.format(wave[i],spec[i]/1000.,err[i]/1000.))
-                    else:
-                        fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
+                    fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
                 else:
                     continue
             fn.write('</DATA>\n')
