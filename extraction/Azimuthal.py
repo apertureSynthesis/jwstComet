@@ -104,11 +104,20 @@ class Azimuthal(object):
                 #Take the weighted average: Sum(w_i * x_i) / Sum(w_i), w_i = 1/noise_i^2
                 #Uncertainty in weighted average: 1 / sqrt(Sum(w_i))
                 #Taylor, An Introduction to Error Analysis
-                apPhot = ApertureStats(data = sci_img*wgt_img, aperture = apEx, sum_method='subpixel', subpixels=5)
-                wtPhot = ApertureStats(data = wgt_img, aperture = apEx, sum_method='subpixel', subpixels=5)
+                # apPhot = ApertureStats(data = sci_img*wgt_img, aperture = apEx, sum_method='center')
+                # wtPhot = ApertureStats(data = wgt_img, aperture = apEx, sum_method='center')
 
-                flux_jy = ((apPhot.sum / wtPhot.sum)*psrScale).to(u.Jy/u.pixel)
-                noise_jy = ((1./np.sqrt(wtPhot.sum))*psrScale).to(u.Jy/u.pixel)
+
+                # flux_jy = ((apPhot.sum / wtPhot.sum)*psrScale).to(u.Jy/u.pixel)
+                # noise_jy = ((1./np.sqrt(wtPhot.sum))*psrScale).to(u.Jy/u.pixel)
+
+                #Instead take an average
+                apPhot = ApertureStats(data = sci_img, aperture = apEx, error = err_img, sum_method='center')
+                #Number of unmasked pixels
+                npix = sum(sum(~apPhot.data_cutout.mask))
+
+                flux_jy = (apPhot.sum/npix*psrScale).to(u.Jy/u.pixel)
+                noise_jy = (apPhot.sum_err/npix * psrScale).to(u.Jy/u.pixel)
 
                 spec[i] = flux_jy.value
                 sigma[i] = noise_jy.value

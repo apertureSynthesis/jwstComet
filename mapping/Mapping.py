@@ -113,7 +113,7 @@ class Mapping(object):
                         composition['TEMPERATURE']['value'] = qtemp
 
                     #Perform the extract
-                    specFile = specStem+'-{:.2f}-arcsecRadAp-{:.1f}-arcsecXoff-{:.1f}-arcsecYoff-{:.2f}um-to-{:.2f}um.txt'.format(radAp.value,dxArc.value,dyArc.value,min(waveLo).value,max(waveUp).value)
+                    specFile = specStem+'-{:.2f}-x-{:.2f}-arcsecRadAp-{:.1f}-arcsecXoff-{:.1f}-arcsecYoff-{:.2f}um-to-{:.2f}um.txt'.format(radAp[0].value,radAp[1].value,dxArc.value,dyArc.value,min(waveLo).value,max(waveUp).value)
                     resFile = specFile[:-3]+'.retrieval-results.txt'
                     beam = Beam()
                     beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLo=waveLo, waveUp=waveUp, radAp=radAp, xOffset=dxArc, yOffset=dyArc, mode='rectangle', smooth=smooth, withPlots=True)

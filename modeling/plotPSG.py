@@ -41,6 +41,7 @@ def makePlots(retFile,withPlots=False):
         #Set up the plots
         fig, axes = plt.subplots(3,1,figsize=(10,10))
         fig.subplots_adjust(hspace=0.25,wspace=0.01)
+        print(f'Band sum = {np.nansum(model-base):.3e}')
         axes[0].plot(wave,spec,label='Data')
         axes[0].plot(wave,model,label='Model')
         axes[0].plot(wave,base,label='Base')

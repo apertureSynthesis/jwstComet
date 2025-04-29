@@ -130,7 +130,9 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
     ret_vars = ret_keys[10:]
     n_vars = len(ret_vars)
 
-    #Read in the CFG file and update it to fit our desired atmosphere and retrieval parameters
+    #Read in the CFG file and update it to fit our desired atmosphere and retrieval parameters if any of them are already in the CFG
+    #With update as of 4/14/25, the only default parameters are STRUCTURE, PRESSURE, PUNIT, and WEIGHT, so now we have to be sure
+    #to add the rest in ourselves.
     retName = specFile[:-3]+'ret.cfg'
     os.system('cp {} {}'.format(specFile[:-3]+'atm.cfg',retName))
     with open(specFile[:-3]+'atm.cfg') as an:
@@ -175,23 +177,61 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                     lifetime_list = ','.join(lifetimes)
                     modified_line = '<ATMOSPHERE-TAU>{}\n'.format(lifetime_list)
                     fn.write(modified_line)
-                elif '<ATMOSPHERE-CONTINUUM>' in line:
                     if retrieval['COMA-OPACITY'] == 'thin':
-                        modified_line = line + ',FluorThin'
-                    else:
-                        modified_line = line
-                    fn.write(modified_line)
+                        modified_line = '<ATMOSPHERE-CONTINUUM>FluorThin\n'
+                        fn.write(modified_line)
+                elif '<ATMOSPHERE-CONTINUUM>' in line:
+                    continue
                 elif '<OBJECT-DIAMETER>' in line:
                     continue
                 else:
                     fn.write(line)
+            #Add in the atmospheric properties
+            modified_line = '<ATMOSPHERE-TEMPERATURE>{}\n'.format(composition['TEMPERATURE']['value'])
+            fn.write(modified_line)
+
+            modified_line = '<ATMOSPHERE-NGAS>{}\n'.format(n_gas)
+            fn.write(modified_line)
+
+            gas_list = ','.join(gases)
+            modified_line = '<ATMOSPHERE-GAS>{}\n'.format(gas_list)
+            fn.write(modified_line)
+
+            models = ['GSFC[' + solar_lifetimes[i]['alias'] + ']' for i in gases]
+            model_list = ','.join(models)
+            modified_line = '<ATMOSPHERE-TYPE>{}\n'.format(model_list)
+            fn.write(modified_line)
+
+            abunds = [str(composition[i]['value']) for i in gases]
+            abund_list = ','.join(abunds)
+            modified_line = '<ATMOSPHERE-ABUN>{}\n'.format(abund_list)
+            fn.write(modified_line)
+
+            units = [composition[i]['unit'] for i in gases]
+            unit_list = ','.join(units)
+            modified_line = '<ATMOSPHERE-UNIT>{}\n'.format(unit_list)
+            fn.write(modified_line)
+
+            if composition['Solar Activity'] == 'active':
+                lifetimes = [str(solar_lifetimes[i]['active']) for i in gases]
+            elif composition['Solar Activity'] == 'quiet':
+                lifetimes = [str(solar_lifetimes[i]['quiet']) for i in gases]
+            else:
+                raise ValueError('Must specify active or quiet solar activity levels')
+            
+            lifetime_list = ','.join(lifetimes)
+            modified_line = '<ATMOSPHERE-TAU>{}\n'.format(lifetime_list)
+            fn.write(modified_line)
+            if retrieval['COMA-OPACITY'] == 'thin':
+                modified_line = '<ATMOSPHERE-CONTINUUM>FluorThin\n'
+                fn.write(modified_line)
 
             #Finish adding the continuum properties
             if withCont:
                 fn.write('<ATMOSPHERE-CONTINUUM>Rayleigh,Refraction,CIA_all,UV_all\n')
                 modified_line = '<SURFACE-GAS-RATIO>{}\n'.format(composition['SURFACE-GAS-RATIO']['value'])
                 fn.write(modified_line)
-                modified_line = '<SURFACE-GAS-UNIT>{}\n'.format(composition['SURFACE-GAS-RATIO']['value'])
+                modified_line = '<SURFACE-GAS-UNIT>{}\n'.format(composition['SURFACE-GAS-RATIO']['unit'])
                 fn.write(modified_line)
                 modified_line = '<SURFACE-TEMPERATURE>{}\n'.format(composition['SURFACE-TEMPERATURE']['value'])
                 fn.write(modified_line)
@@ -244,7 +284,11 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                 if grating == 'G395M/F290LP':
                     res_element = np.sqrt(2*np.log(2))*2*0.001440
                 elif grating == 'G395H/F290LP':
-                    res_element = np.sqrt(2*np.log(2))*2*1.904e-4
+                    res_element = np.sqrt(2*np.log(2))*2*7.236e-04
+                elif grating == 'G140H/F100LP':
+                    res_element = np.sqrt(2*np.log(2))*2*2.388e-04
+                elif grating == 'G235H/F170LP':
+                    res_element = np.sqrt(2*np.log(2))*2*3.344e-04
                 else:
                     res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
                 res_type = 'um'
@@ -269,7 +313,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                 fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')
             if mode == 'mapping':
-                fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(radAp,radAp))
+                fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(radWidth,radHeight))
                 fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset))
                 fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset))
@@ -285,11 +329,11 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                 else:
                     fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(psa,outerRadius - innerRadius))
                     fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
-                fn.write('<GEOMETRY-OFFSET-NS>0\n')
+                fn.write('<GEOMETRY-OFFSET-EW>0\n')
                 if innerRadius == 0:
-                    fn.write('<GEOMETRY-OFFSET-EW>0\n')
+                    fn.write('<GEOMETRY-OFFSET-NS>0\n')
                 else:
-                    fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(0.5*(innerRadius + outerRadius)))
+                    fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(0.5*(innerRadius + outerRadius)))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')    
 
             fn.write('<OBJECT-DIAMETER>{}\n'.format(composition['DIAMETER']['value']))                

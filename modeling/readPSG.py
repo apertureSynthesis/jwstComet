@@ -14,7 +14,10 @@ class readPSG(object):
         super().__init__()
         self.name = self.__class__.__name__
         self.resFile = resFile
-        self.retrieval_variables, self.retrieval_values, self.retrieval_sigmas = self.readResults()
+        try:
+            self.retrieval_variables, self.retrieval_values, self.retrieval_sigmas = self.readResults()
+        except:
+            print('Forward model only: no retrieved parameters.')
 
     def readResults(self):
         with open(self.resFile, 'r') as fn:
@@ -33,4 +36,4 @@ class readPSG(object):
         for var, val, sig in zip(retrieval_variables, retrieval_values, retrieval_sigmas):
             print('{} = {} +- {}'.format(var,val,sig))
 
-        return [s.strip() for s in retrieval_variables], [float(s.strip()) for s in retrieval_values], [float(s.strip()) for s in retrieval_sigmas]       
+            return [s.strip() for s in retrieval_variables], [float(s.strip()) for s in retrieval_values], [float(s.strip()) for s in retrieval_sigmas]       
