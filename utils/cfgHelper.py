@@ -33,14 +33,14 @@ def ephCFG(specFile,name,objectType,midtime,local=True):
         fn.write('<OBJECT>{}\n'.format(objectType))
         fn.write('<OBJECT-NAME>{}\n'.format(name))
         fn.write('<OBJECT-DATE>{}\n'.format(datetime.strptime(midtime, "%Y-%b-%d %H:%M:%S.%f").strftime("%Y/%m/%d %H:%M")))
-        fn.write('<GEOMETRY>Observatory\n')
+        #fn.write('<GEOMETRY>Observatory\n')
 
 
-    #Send it to the PSG
-    if local:
-        os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(cfgName,ephName))
-    else:
-        os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(cfgName,ephName))
+    # #Send it to the PSG
+    # if local:
+    #     os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(cfgName,ephName))
+    # else:
+    os.system('curl -d type=cfg -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(cfgName,ephName))
 
 
 
@@ -186,59 +186,59 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                     continue
                 else:
                     fn.write(line)
-            #Add in the atmospheric properties
-            modified_line = '<ATMOSPHERE-TEMPERATURE>{}\n'.format(composition['TEMPERATURE']['value'])
-            fn.write(modified_line)
+            # #Add in the atmospheric properties
+            # modified_line = '<ATMOSPHERE-TEMPERATURE>{}\n'.format(composition['TEMPERATURE']['value'])
+            # fn.write(modified_line)
 
-            modified_line = '<ATMOSPHERE-NGAS>{}\n'.format(n_gas)
-            fn.write(modified_line)
+            # modified_line = '<ATMOSPHERE-NGAS>{}\n'.format(n_gas)
+            # fn.write(modified_line)
 
-            gas_list = ','.join(gases)
-            modified_line = '<ATMOSPHERE-GAS>{}\n'.format(gas_list)
-            fn.write(modified_line)
+            # gas_list = ','.join(gases)
+            # modified_line = '<ATMOSPHERE-GAS>{}\n'.format(gas_list)
+            # fn.write(modified_line)
 
-            models = ['GSFC[' + solar_lifetimes[i]['alias'] + ']' for i in gases]
-            model_list = ','.join(models)
-            modified_line = '<ATMOSPHERE-TYPE>{}\n'.format(model_list)
-            fn.write(modified_line)
+            # models = ['GSFC[' + solar_lifetimes[i]['alias'] + ']' for i in gases]
+            # model_list = ','.join(models)
+            # modified_line = '<ATMOSPHERE-TYPE>{}\n'.format(model_list)
+            # fn.write(modified_line)
 
-            abunds = [str(composition[i]['value']) for i in gases]
-            abund_list = ','.join(abunds)
-            modified_line = '<ATMOSPHERE-ABUN>{}\n'.format(abund_list)
-            fn.write(modified_line)
+            # abunds = [str(composition[i]['value']) for i in gases]
+            # abund_list = ','.join(abunds)
+            # modified_line = '<ATMOSPHERE-ABUN>{}\n'.format(abund_list)
+            # fn.write(modified_line)
 
-            units = [composition[i]['unit'] for i in gases]
-            unit_list = ','.join(units)
-            modified_line = '<ATMOSPHERE-UNIT>{}\n'.format(unit_list)
-            fn.write(modified_line)
+            # units = [composition[i]['unit'] for i in gases]
+            # unit_list = ','.join(units)
+            # modified_line = '<ATMOSPHERE-UNIT>{}\n'.format(unit_list)
+            # fn.write(modified_line)
 
-            if composition['Solar Activity'] == 'active':
-                lifetimes = [str(solar_lifetimes[i]['active']) for i in gases]
-            elif composition['Solar Activity'] == 'quiet':
-                lifetimes = [str(solar_lifetimes[i]['quiet']) for i in gases]
-            else:
-                raise ValueError('Must specify active or quiet solar activity levels')
+            # if composition['Solar Activity'] == 'active':
+            #     lifetimes = [str(solar_lifetimes[i]['active']) for i in gases]
+            # elif composition['Solar Activity'] == 'quiet':
+            #     lifetimes = [str(solar_lifetimes[i]['quiet']) for i in gases]
+            # else:
+            #     raise ValueError('Must specify active or quiet solar activity levels')
             
-            lifetime_list = ','.join(lifetimes)
-            modified_line = '<ATMOSPHERE-TAU>{}\n'.format(lifetime_list)
-            fn.write(modified_line)
-            if retrieval['COMA-OPACITY'] == 'thin':
-                modified_line = '<ATMOSPHERE-CONTINUUM>FluorThin\n'
-                fn.write(modified_line)
+            # lifetime_list = ','.join(lifetimes)
+            # modified_line = '<ATMOSPHERE-TAU>{}\n'.format(lifetime_list)
+            # fn.write(modified_line)
+            # if retrieval['COMA-OPACITY'] == 'thin':
+            #     modified_line = '<ATMOSPHERE-CONTINUUM>FluorThin\n'
+            #     fn.write(modified_line)
 
             #Finish adding the continuum properties
+            fn.write('<ATMOSPHERE-CONTINUUM>Rayleigh,Refraction,CIA_all,UV_all\n')
+            modified_line = '<SURFACE-GAS-RATIO>{}\n'.format(composition['SURFACE-GAS-RATIO']['value'])
+            fn.write(modified_line)
+            modified_line = '<SURFACE-GAS-UNIT>{}\n'.format(composition['SURFACE-GAS-RATIO']['unit'])
+            fn.write(modified_line)
+            modified_line = '<SURFACE-TEMPERATURE>{}\n'.format(composition['SURFACE-TEMPERATURE']['value'])
+            fn.write(modified_line)
+            modified_line = '<SURFACE-ALBEDO>{}\n'.format(composition['SURFACE-ALBEDO']['value'])
+            fn.write(modified_line)
+            modified_line = '<SURFACE-EMISSIVITY>{}\n'.format(composition['SURFACE-EMISSIVITY']['value'])
+            fn.write(modified_line)
             if withCont:
-                fn.write('<ATMOSPHERE-CONTINUUM>Rayleigh,Refraction,CIA_all,UV_all\n')
-                modified_line = '<SURFACE-GAS-RATIO>{}\n'.format(composition['SURFACE-GAS-RATIO']['value'])
-                fn.write(modified_line)
-                modified_line = '<SURFACE-GAS-UNIT>{}\n'.format(composition['SURFACE-GAS-RATIO']['unit'])
-                fn.write(modified_line)
-                modified_line = '<SURFACE-TEMPERATURE>{}\n'.format(composition['SURFACE-TEMPERATURE']['value'])
-                fn.write(modified_line)
-                modified_line = '<SURFACE-ALBEDO>{}\n'.format(composition['SURFACE-ALBEDO']['value'])
-                fn.write(modified_line)
-                modified_line = '<SURFACE-EMISSIVITY>{}\n'.format(composition['SURFACE-EMISSIVITY']['value'])
-                fn.write(modified_line)
                 fn.write('<GENERATOR-CONT-MODEL>Y\n')
             else:
                 fn.write('<GENERATOR-CONT-MODEL>N\n')
@@ -246,9 +246,14 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
             #Add in properties for JWST
             fn.write('<GENERATOR-TELESCOPE>SINGLE\n')
             fn.write('<GENERATOR-DIAMTELE>5.64\n')
+            fn.write('<GENERATOR-TELESCOPE1>1\n')
+            fn.write('<GENERATOR-TELESCOPE2>2.0\n')
+            fn.write('<GENERATOR-TELESCOPE3>1.0\n')
+            fn.write('<GENERATOR-NOISE>NO\n')
 
             #Add in flux and modeling properties
             fn.write('<GENERATOR-GAS-MODEL>Y\n')
+            fn.write('<GENERATOR-LOGRAD>N\n')
             fn.write('<GENERATOR-CONT-STELLAR>Y\n')
             fn.write('<GENERATOR-RADUNITS>Jy\n')
             fn.write('<GENERATOR-TRANS-APPLY>N\n')
@@ -283,15 +288,19 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
             if instrument == 'NIRSPEC':
                 if grating == 'G395M/F290LP':
                     res_element = np.sqrt(2*np.log(2))*2*0.001440
-                elif grating == 'G395H/F290LP':
-                    res_element = np.sqrt(2*np.log(2))*2*7.236e-04
-                elif grating == 'G140H/F100LP':
-                    res_element = np.sqrt(2*np.log(2))*2*2.388e-04
-                elif grating == 'G235H/F170LP':
-                    res_element = np.sqrt(2*np.log(2))*2*3.344e-04
+                    res_type = 'um'
+                elif (grating == 'G395H/F290LP') or (grating == 'G140H/F100LP') or (grating == 'G235H/F170LP'):
+                    res_element = 2700
+                    res_type = 'RP'
+                # elif grating == 'G395H/F290LP':
+                #     res_element = np.sqrt(2*np.log(2))*2*7.236e-04
+                # elif grating == 'G140H/F100LP':
+                #     res_element = np.sqrt(2*np.log(2))*2*2.388e-04
+                # elif grating == 'G235H/F170LP':
+                #     res_element = np.sqrt(2*np.log(2))*2*3.344e-04
                 else:
                     res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
-                res_type = 'um'
+                    res_type = 'um'
             elif instrument == 'MIRI':
                 if '1/' in grating:
                     res_element = np.sqrt(2*np.log(2))*2*0.000828
@@ -306,19 +315,19 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                 fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset))
                 fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')
-            if mode == 'rectangle':
+            elif mode == 'rectangle':
                 fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(radWidth,radHeight))
                 fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset))
                 fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')
-            if mode == 'mapping':
+            elif mode == 'mapping':
                 fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(radWidth,radHeight))
                 fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset))
                 fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')
-            if mode == 'azimuthal':
+            elif mode == 'azimuthal':
                 if '#Inner annulus radius (arcsec)' in line:
                     innerRadius = float(line.split()[-1])
                 if '#Outer annulus radius (arcsec)' in line:
@@ -335,11 +344,15 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                 else:
                     fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(0.5*(innerRadius + outerRadius)))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')    
+            else:
+                print('Allowed modes are circle, rectangle, azimuthal, and mapping.')
+                return
 
             fn.write('<OBJECT-DIAMETER>{}\n'.format(composition['DIAMETER']['value']))                
 
             #Hard code some retrieval preferences, make room to update later
             fn.write('<RETRIEVAL-GAMMA>{}\n'.format(retrieval['GAMMA']))
+            fn.write('<RETRIEVAL-ALPHA>\n')
             fn.write('<RETRIEVAL-FLUXSCALER>{}\n'.format(retrieval['FLUXSCALER']))
             fn.write('<RETRIEVAL-FITTELLURIC>{}\n'.format(retrieval['FITTELLURIC']))
             fn.write('<RETRIEVAL-FITGAIN>{}\n'.format(retrieval['FITGAIN']))

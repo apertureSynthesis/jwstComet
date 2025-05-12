@@ -36,4 +36,4 @@ class readPSG(object):
         for var, val, sig in zip(retrieval_variables, retrieval_values, retrieval_sigmas):
             print('{} = {} +- {}'.format(var,val,sig))
 
-            return [s.strip() for s in retrieval_variables], [float(s.strip()) for s in retrieval_values], [float(s.strip()) for s in retrieval_sigmas]       
+        return [s.strip() for s in retrieval_variables], [float(s.strip()) for s in retrieval_values], [float(s.strip()) for s in retrieval_sigmas]       

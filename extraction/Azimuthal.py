@@ -98,8 +98,8 @@ class Azimuthal(object):
                 cdata[:sciCube.ycenter,:] = np.nan
 
             for i in range(dnpts):
-                sci_img = data[i,:,:]*u.MJy/u.sr
-                err_img = derr[i,:,:]*u.MJy/u.sr
+                sci_img = data[i,:,:]*u.MJy/u.sr * psr
+                err_img = derr[i,:,:]*u.MJy/u.sr * psr
                 wgt_img = 1./(err_img**2)
                 #Take the weighted average: Sum(w_i * x_i) / Sum(w_i), w_i = 1/noise_i^2
                 #Uncertainty in weighted average: 1 / sqrt(Sum(w_i))
@@ -116,8 +116,8 @@ class Azimuthal(object):
                 #Number of unmasked pixels
                 npix = sum(sum(~apPhot.data_cutout.mask))
 
-                flux_jy = (apPhot.sum/npix*psrScale).to(u.Jy/u.pixel)
-                noise_jy = (apPhot.sum_err/npix * psrScale).to(u.Jy/u.pixel)
+                flux_jy = (apPhot.sum/npix).to(u.Jy)
+                noise_jy = (apPhot.sum_err/npix).to(u.Jy)
 
                 spec[i] = flux_jy.value
                 sigma[i] = noise_jy.value

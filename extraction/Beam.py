@@ -97,16 +97,17 @@ class Beam(object):
 
             for i in range(dnpts):
                 if smooth != None:
-                    sci_img = convolve(data[i,:,:],Box2DKernel(smooth))*u.MJy/u.sr
-                    err_img = convolve(derr[i,:,:],Box2DKernel(smooth))*u.MJy/u.sr
+                    sci_img = convolve(data[i,:,:],Box2DKernel(smooth))*u.MJy/u.sr * psr
+                    err_img = convolve(derr[i,:,:],Box2DKernel(smooth))*u.MJy/u.sr * psr
                 else:
-                    sci_img = data[i,:,:]*u.MJy/u.sr
-                    err_img = derr[i,:,:]*u.MJy/u.sr
+                    sci_img = data[i,:,:]*u.MJy/u.sr * psr
+                    err_img = derr[i,:,:]*u.MJy/u.sr * psr
                 #apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='subpixel', subpixels=5)
-                apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='exact', subpixels=5)
+                #apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='exact', subpixels=5)
+                apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='center')
 
-                flux_jy = (apPhot['aperture_sum'][0]*psrScale).to(u.Jy/u.pixel)
-                noise_jy = (apPhot['aperture_sum_err'][0]*psrScale).to(u.Jy/u.pixel)
+                flux_jy = (apPhot['aperture_sum'][0]).to(u.Jy)
+                noise_jy = (apPhot['aperture_sum_err'][0]).to(u.Jy)
 
                 spec[i] = flux_jy.value
                 sigma[i] = noise_jy.value
