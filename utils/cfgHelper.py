@@ -186,45 +186,45 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                     continue
                 else:
                     fn.write(line)
-            # #Add in the atmospheric properties
-            # modified_line = '<ATMOSPHERE-TEMPERATURE>{}\n'.format(composition['TEMPERATURE']['value'])
-            # fn.write(modified_line)
+            #Add in the atmospheric properties
+            modified_line = '<ATMOSPHERE-TEMPERATURE>{}\n'.format(composition['TEMPERATURE']['value'])
+            fn.write(modified_line)
 
-            # modified_line = '<ATMOSPHERE-NGAS>{}\n'.format(n_gas)
-            # fn.write(modified_line)
+            modified_line = '<ATMOSPHERE-NGAS>{}\n'.format(n_gas)
+            fn.write(modified_line)
 
-            # gas_list = ','.join(gases)
-            # modified_line = '<ATMOSPHERE-GAS>{}\n'.format(gas_list)
-            # fn.write(modified_line)
+            gas_list = ','.join(gases)
+            modified_line = '<ATMOSPHERE-GAS>{}\n'.format(gas_list)
+            fn.write(modified_line)
 
-            # models = ['GSFC[' + solar_lifetimes[i]['alias'] + ']' for i in gases]
-            # model_list = ','.join(models)
-            # modified_line = '<ATMOSPHERE-TYPE>{}\n'.format(model_list)
-            # fn.write(modified_line)
+            models = ['GSFC[' + solar_lifetimes[i]['alias'] + ']' for i in gases]
+            model_list = ','.join(models)
+            modified_line = '<ATMOSPHERE-TYPE>{}\n'.format(model_list)
+            fn.write(modified_line)
 
-            # abunds = [str(composition[i]['value']) for i in gases]
-            # abund_list = ','.join(abunds)
-            # modified_line = '<ATMOSPHERE-ABUN>{}\n'.format(abund_list)
-            # fn.write(modified_line)
+            abunds = [str(composition[i]['value']) for i in gases]
+            abund_list = ','.join(abunds)
+            modified_line = '<ATMOSPHERE-ABUN>{}\n'.format(abund_list)
+            fn.write(modified_line)
 
-            # units = [composition[i]['unit'] for i in gases]
-            # unit_list = ','.join(units)
-            # modified_line = '<ATMOSPHERE-UNIT>{}\n'.format(unit_list)
-            # fn.write(modified_line)
+            units = [composition[i]['unit'] for i in gases]
+            unit_list = ','.join(units)
+            modified_line = '<ATMOSPHERE-UNIT>{}\n'.format(unit_list)
+            fn.write(modified_line)
 
-            # if composition['Solar Activity'] == 'active':
-            #     lifetimes = [str(solar_lifetimes[i]['active']) for i in gases]
-            # elif composition['Solar Activity'] == 'quiet':
-            #     lifetimes = [str(solar_lifetimes[i]['quiet']) for i in gases]
-            # else:
-            #     raise ValueError('Must specify active or quiet solar activity levels')
+            if composition['Solar Activity'] == 'active':
+                lifetimes = [str(solar_lifetimes[i]['active']) for i in gases]
+            elif composition['Solar Activity'] == 'quiet':
+                lifetimes = [str(solar_lifetimes[i]['quiet']) for i in gases]
+            else:
+                raise ValueError('Must specify active or quiet solar activity levels')
             
-            # lifetime_list = ','.join(lifetimes)
-            # modified_line = '<ATMOSPHERE-TAU>{}\n'.format(lifetime_list)
-            # fn.write(modified_line)
-            # if retrieval['COMA-OPACITY'] == 'thin':
-            #     modified_line = '<ATMOSPHERE-CONTINUUM>FluorThin\n'
-            #     fn.write(modified_line)
+            lifetime_list = ','.join(lifetimes)
+            modified_line = '<ATMOSPHERE-TAU>{}\n'.format(lifetime_list)
+            fn.write(modified_line)
+            if retrieval['COMA-OPACITY'] == 'thin':
+                modified_line = '<ATMOSPHERE-CONTINUUM>FluorThin\n'
+                fn.write(modified_line)
 
             #Finish adding the continuum properties
             fn.write('<ATMOSPHERE-CONTINUUM>Rayleigh,Refraction,CIA_all,UV_all\n')
