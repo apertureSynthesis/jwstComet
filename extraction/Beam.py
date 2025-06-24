@@ -102,9 +102,9 @@ class Beam(object):
                 else:
                     sci_img = data[i,:,:]*u.MJy/u.sr * psr
                     err_img = derr[i,:,:]*u.MJy/u.sr * psr
-                #apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='subpixel', subpixels=5)
+                apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='subpixel', subpixels=5)
                 #apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='exact', subpixels=5)
-                apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='center')
+                #apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='center')
 
                 flux_jy = (apPhot['aperture_sum'][0]).to(u.Jy)
                 noise_jy = (apPhot['aperture_sum_err'][0]).to(u.Jy)
