@@ -18,7 +18,7 @@ class Mapping(object):
         self.name = self.__class__.__name__
 
     @u.quantity_input(radAp=u.arcsec)
-    def makeMaps(self,cubeFiles,specStem,csvFile,waveLo,waveUp,radAp,name,objectType,composition,retrieval,withCont=False,smooth=None,box=None,withEph=True,local=True,tempFix=False,tempFile=None):
+    def makeMaps(self,cubeFiles,specStem,csvFile,waveLo,waveUp,radAp,name,objectType,composition,retrieval,withCont=False,smooth=None,box=None,withEph=True,local=True,tempFix=False,tempFile=None,masterATM=False,masterATMFile=None):
         """
         Read in a JWST IFU cube. Find the photocenter. Extract spectra across the
         entire cube. Send them to the PSG for analysis. Plot the model and extracted spectrum.
@@ -118,7 +118,7 @@ class Mapping(object):
                     beam = Beam()
                     beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLo=waveLo, waveUp=waveUp, radAp=radAp, xOffset=dxArc, yOffset=dyArc, mode='rectangle', smooth=smooth, withPlots=True)
                     beamModel = runPSG()
-                    beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval=retrieval, mode='mapping', withCont=withCont, withPlots=True, withEph=withEph, local=local)
+                    beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval=retrieval, mode='mapping', withCont=withCont, withPlots=True, withEph=withEph, local=local, masterATM=masterATM, masterATMFile=masterATMFile)
                     
                     try:
                         results = readPSG(resFile)

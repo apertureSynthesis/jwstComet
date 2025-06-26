@@ -44,7 +44,7 @@ def ephCFG(specFile,name,objectType,midtime,local=True):
 
 
 
-def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True):
+def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True, masterATM=False, masterATMFile=None):
     """
     Read in the ephemeris CFG file. Incorporate it along with user-defined modeling parameters into a new CFG file.
     Read in the extracted spectrum and header information. Send it off to the PSG for modeling.
@@ -134,8 +134,14 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
     #With update as of 4/14/25, the only default parameters are STRUCTURE, PRESSURE, PUNIT, and WEIGHT, so now we have to be sure
     #to add the rest in ourselves.
     retName = specFile[:-3]+'ret.cfg'
-    os.system('cp {} {}'.format(specFile[:-3]+'atm.cfg',retName))
-    with open(specFile[:-3]+'atm.cfg') as an:
+    if masterATM:
+        os.system('cp {} {}'.format(masterATMFile,retName))
+        atmTemplate = masterATMFile
+    else:
+        os.system('cp {} {}'.format(specFile[:-3]+'atm.cfg',retName))
+        atmTemplate = specFile[:-3]+'atm.cfg'
+
+    with open(atmTemplate) as an:
         with open(retName, 'w') as fn:
             for _, line in enumerate(an):
                 if '<ATMOSPHERE-PRESSURE>' in line:
@@ -187,6 +193,12 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                 else:
                     fn.write(line)
             #Add in the atmospheric properties
+            modified_line = '<ATMOSPHERE-STRUCTURE>Coma\n'
+            fn.write(modified_line)
+
+            modified_line = '<ATMOSPHERE-PRESSURE>{}\n'.format(composition['COMA-ACTIVITY']['value'])
+            fn.write(modified_line)
+
             modified_line = '<ATMOSPHERE-TEMPERATURE>{}\n'.format(composition['TEMPERATURE']['value'])
             fn.write(modified_line)
 
@@ -379,9 +391,9 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
 
     #Send it to the PSG
     if local:
-        os.system('curl -d type=ret --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(retName,resFile))
+        os.system('curl -d type=ret -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(retName,resFile))
     else:
-        os.system('curl -d type=ret --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(retName,resFile))
+        os.system('curl -d type=ret -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(retName,resFile))
 
 
 
