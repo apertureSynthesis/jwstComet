@@ -69,7 +69,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
         'H2O':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'H2O'},
         'OHP':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'OHP'},
         'CO2':      {'quiet': 4.948e5, 'active': 2.101e5, 'alias': 'CO2'},
-        '13CO2':    {'quiet': 4.948e5, 'active': 2.101e5, 'alias': '13CO2'},
+        '(13)CO2':    {'quiet': 4.948e5, 'active': 2.101e5, 'alias': '13CO2'},
         'OCS':      {'quiet': 9.807e3, 'active': 7.723e3, 'alias': 'OCS'},
         'HCN':      {'quiet': 7.662e4, 'active': 3.085e4, 'alias': 'HCN'},
         'CO':       {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'CO'},
@@ -123,6 +123,16 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
     atm_keys = list(composition.keys())
 
     gases = atm_keys[8:]
+    gas_names = gases.copy()
+    gas_models = gases.copy()
+    for i in range(len(gases)):
+        gsplit = gases[i].split(')')
+        if len(gsplit) > 1:
+            gas = gsplit[-1]
+            iso = gsplit[0].split('(')[-1]
+            gas_names[i] = gas
+            gas_models[i] = iso+gas
+
     n_gas = len(gases)
 
     #Add the retrieval parameters
@@ -154,7 +164,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                     modified_line = '<ATMOSPHERE-NGAS>{}\n'.format(n_gas)
                     fn.write(modified_line)
                 elif '<ATMOSPHERE-GAS>' in line:
-                    gas_list = ','.join(gases)
+                    gas_list = ','.join(gas_names)
                     modified_line = '<ATMOSPHERE-GAS>{}\n'.format(gas_list)
                     fn.write(modified_line)
                 elif '<ATMOSPHERE-TYPE>' in line:
@@ -192,37 +202,37 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                     continue
                 else:
                     fn.write(line)
-            #Add in the atmospheric properties
-            modified_line = '<ATMOSPHERE-STRUCTURE>Coma\n'
-            fn.write(modified_line)
+            # #Add in the atmospheric properties
+            # modified_line = '<ATMOSPHERE-STRUCTURE>Coma\n'
+            # fn.write(modified_line)
 
-            modified_line = '<ATMOSPHERE-PRESSURE>{}\n'.format(composition['COMA-ACTIVITY']['value'])
-            fn.write(modified_line)
+            # modified_line = '<ATMOSPHERE-PRESSURE>{}\n'.format(composition['COMA-ACTIVITY']['value'])
+            # fn.write(modified_line)
 
-            modified_line = '<ATMOSPHERE-TEMPERATURE>{}\n'.format(composition['TEMPERATURE']['value'])
-            fn.write(modified_line)
+            # modified_line = '<ATMOSPHERE-TEMPERATURE>{}\n'.format(composition['TEMPERATURE']['value'])
+            # fn.write(modified_line)
 
-            modified_line = '<ATMOSPHERE-NGAS>{}\n'.format(n_gas)
-            fn.write(modified_line)
+            # modified_line = '<ATMOSPHERE-NGAS>{}\n'.format(n_gas)
+            # fn.write(modified_line)
 
-            gas_list = ','.join(gases)
-            modified_line = '<ATMOSPHERE-GAS>{}\n'.format(gas_list)
-            fn.write(modified_line)
+            # gas_list = ','.join(gases)
+            # modified_line = '<ATMOSPHERE-GAS>{}\n'.format(gas_list)
+            # fn.write(modified_line)
 
-            models = ['GSFC[' + solar_lifetimes[i]['alias'] + ']' for i in gases]
-            model_list = ','.join(models)
-            modified_line = '<ATMOSPHERE-TYPE>{}\n'.format(model_list)
-            fn.write(modified_line)
+            # models = ['GSFC[' + solar_lifetimes[i]['alias'] + ']' for i in gases]
+            # model_list = ','.join(models)
+            # modified_line = '<ATMOSPHERE-TYPE>{}\n'.format(model_list)
+            # fn.write(modified_line)
 
-            abunds = [str(composition[i]['value']) for i in gases]
-            abund_list = ','.join(abunds)
-            modified_line = '<ATMOSPHERE-ABUN>{}\n'.format(abund_list)
-            fn.write(modified_line)
+            # abunds = [str(composition[i]['value']) for i in gases]
+            # abund_list = ','.join(abunds)
+            # modified_line = '<ATMOSPHERE-ABUN>{}\n'.format(abund_list)
+            # fn.write(modified_line)
 
-            units = [composition[i]['unit'] for i in gases]
-            unit_list = ','.join(units)
-            modified_line = '<ATMOSPHERE-UNIT>{}\n'.format(unit_list)
-            fn.write(modified_line)
+            # units = [composition[i]['unit'] for i in gases]
+            # unit_list = ','.join(units)
+            # modified_line = '<ATMOSPHERE-UNIT>{}\n'.format(unit_list)
+            # fn.write(modified_line)
 
             if composition['Solar Activity'] == 'active':
                 lifetimes = [str(solar_lifetimes[i]['active']) for i in gases]
@@ -391,9 +401,9 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
 
     #Send it to the PSG
     if local:
-        os.system('curl -d type=ret -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(retName,resFile))
+        os.system('curl -d type=ret --data-urlencode file@{} http://localhost:3000/api.php > {}'.format(retName,resFile))
     else:
-        os.system('curl -d type=ret -d wgeo=y -d wephm=y -d watm=y --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(retName,resFile))
+        os.system('curl -d type=ret --data-urlencode file@{} https://psg.gsfc.nasa.gov/api.php > {}'.format(retName,resFile))
 
 
 
