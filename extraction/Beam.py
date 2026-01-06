@@ -14,7 +14,7 @@ class Beam(object):
         self.name = self.__class__.__name__
 
     @u.quantity_input(radAp=u.arcsec, xOffset=u.arcsec, yOffset=u.arcsec)
-    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,mode='circle',smooth=None,mask=None,withPlots=False):
+    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,mode='circle',smooth=None,mask=None,withPlots=False,xCenter=None,yCenter=None):
         """
         Extract a spectrum at the specified position and save it to a text file.
         Plot the aperture and extracted spectrum if desired
@@ -72,6 +72,12 @@ class Beam(object):
             #Generate the wavelength array
             wvls = np.arange(dnpts)*dwv + wv0
 
+            #Check if we have a user-input center
+            if (xCenter is not None) & (yCenter is not None):
+                print('Using user-input photocenter coordinates')
+                sciCube.xcenter = xCenter
+                sciCube.ycenter = yCenter
+
             print('Center coordinates are ({:d},{:d})'.format(sciCube.xcenter,sciCube.ycenter))
 
             #Convert horizontal and vertical offsets from arcseconds to pixels
@@ -102,9 +108,9 @@ class Beam(object):
                 else:
                     sci_img = data[i,:,:]*u.MJy/u.sr * psr
                     err_img = derr[i,:,:]*u.MJy/u.sr * psr
-                apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='subpixel', subpixels=5)
+                #apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='subpixel', subpixels=5)
                 #apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='exact', subpixels=5)
-                #apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='center')
+                apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='center')
 
                 flux_jy = (apPhot['aperture_sum'][0]).to(u.Jy)
                 noise_jy = (apPhot['aperture_sum_err'][0]).to(u.Jy)

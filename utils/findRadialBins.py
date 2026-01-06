@@ -16,11 +16,12 @@ class findRadialBins(object):
         list of inner, mid, and outer radii for the annuli
     """
 
-    def __init__(self, cubeFile, annulusWidth=0.1*u.arcsec):
+    def __init__(self, cubeFile, annulusWidth=0.1*u.arcsec, rmax=0.8):
         super().__init__()
         self.name = self.__class__.__name__
         self.cubefile = cubeFile
         self.annulusWidth = annulusWidth
+        self.rmax = rmax
         self.r_ins, self.r_outs, self.r_mids = self.generateAnnuli()
 
     def generateAnnuli(self):
@@ -43,7 +44,7 @@ class findRadialBins(object):
 
         #Find the largest distance, only go about 80% of the way
         #to make sure we mostly remain on the chip
-        rad_max = np.round(0.8*np.nanmax(distances))
+        rad_max = np.round(self.rmax*np.nanmax(distances))
         
 
         #Work out how big our annulus width is in pixels

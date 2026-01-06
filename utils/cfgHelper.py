@@ -66,24 +66,31 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
 
     #Dictionary of solar photolysis lifetimes
     solar_lifetimes = {
-        'H2O':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'H2O'},
-        'OHP':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'OHP'},
-        'CO2':      {'quiet': 4.948e5, 'active': 2.101e5, 'alias': 'CO2'},
-        '(13)CO2':    {'quiet': 4.948e5, 'active': 2.101e5, 'alias': '13CO2'},
-        'OCS':      {'quiet': 9.807e3, 'active': 7.723e3, 'alias': 'OCS'},
-        'HCN':      {'quiet': 7.662e4, 'active': 3.085e4, 'alias': 'HCN'},
-        'CO':       {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'CO'},
-        'H2CO':     {'quiet': 4.649e3, 'active': 4.369e3, 'alias': 'H2CO'},
-        'CH4':      {'quiet': 1.317e5, 'active': 5.381e4, 'alias': 'CH4'},
-        'C2H6':     {'quiet': 9.491e4, 'active': 3.978e4, 'alias': 'C2H6'},
-        'CH3OH':    {'quiet': 8.787e4, 'active': 4.816e4, 'alias': 'CH3OH'},
-        'CH3OH_V9': {'quiet': 8.787e4, 'active': 4.816e4, 'alias': 'CH3OH_V9'},
-        'NH3':      {'quiet': 5.658e3, 'active': 5.022e3, 'alias': 'NH3'},
-        'C2H2':     {'quiet': 3.269e4, 'active': 1.691e4, 'alias': 'C2H2'},
-        'CN':       {'quiet': '1.3e4 2.1e5', 'active': '1.3e4 2.1e5', 'alias': 'CN'},
-        'NH2':      {'quiet': '4.1e3 6.2e4', 'active': '4.1e3 6.2e4', 'alias': 'NH2'},
-        'H2CO-Daughter': {'quiet': '1.428e3 4.649e3', 'active': '1.428e3 4.369e3', 'alias': 'H2CO'},
-        'NH':       {'quiet': '5.0e4 1.5e5', 'active': '5.0e4 1.5e5', 'alias': 'NH'}
+        'H2O':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'H2O', 'g_alias': 'H2O'},
+        'o-H2O':    {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'H2O_ortho', 'g_alias': 'H2O'},
+        'p-H2O':    {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'H2O_para', 'g_alias': 'H2O'},
+        'HDO':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'HDO', 'g_alias': 'H2O'},
+        'OHP':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'OHP', 'g_alias': 'OH'},
+        'CO2':      {'quiet': 4.948e5, 'active': 2.101e5, 'alias': 'CO2', 'g_alias': 'CO2'},
+        '(13)CO2':    {'quiet': 4.948e5, 'active': 2.101e5, 'alias': '13CO2', 'g_alias': 'CO2'},
+        'OCS':      {'quiet': 9.807e3, 'active': 7.723e3, 'alias': 'OCS', 'g_alias': 'OCS'},
+        'HCN':      {'quiet': 7.662e4, 'active': 3.085e4, 'alias': 'HCN', 'g_alias': 'HCN'},
+        'CO':       {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'CO', 'g_alias': 'CO'},
+        '13CO':     {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'CO_1316', 'g_alias': 'CO'},
+        'C17O':     {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'CO_1217', 'g_alias': 'CO'},
+        'C18O':     {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'CO_1218', 'g_alias': 'CO'},
+        'H2CO':     {'quiet': 4.649e3, 'active': 4.369e3, 'alias': 'H2CO', 'g_alias': 'H2CO'},
+        'CH4':      {'quiet': 1.317e5, 'active': 5.381e4, 'alias': 'CH4', 'g_alias': 'CH4'},
+        'CH3D':     {'quiet': 1.317e5, 'active': 5.381e4, 'alias': 'CH3D', 'g_alias': 'CH4'},
+        'C2H6':     {'quiet': 9.491e4, 'active': 3.978e4, 'alias': 'C2H6', 'g_alias': 'C2H6'},
+        'CH3OH':    {'quiet': 8.787e4, 'active': 4.816e4, 'alias': 'CH3OH', 'g_alias': 'CH3OH'},
+        'CH3OH_V9': {'quiet': 8.787e4, 'active': 4.816e4, 'alias': 'CH3OH_V9', 'g_alias': 'CH3OH'},
+        'NH3':      {'quiet': 5.658e3, 'active': 5.022e3, 'alias': 'NH3', 'g_alias': 'NH3'},
+        'C2H2':     {'quiet': 3.269e4, 'active': 1.691e4, 'alias': 'C2H2', 'g_alias': 'C2H2'},
+        'CN':       {'quiet': '1.3e4 2.1e5', 'active': '1.3e4 2.1e5', 'alias': 'CN', 'g_alias': 'CN'},
+        'NH2':      {'quiet': '4.1e3 6.2e4', 'active': '4.1e3 6.2e4', 'alias': 'NH2', 'g_alias': 'NH2'},
+        'H2CO-Daughter': {'quiet': '1.428e3 4.649e3', 'active': '1.428e3 4.369e3', 'alias': 'H2CO', 'g_alias': 'H2CO'},
+        'NH':       {'quiet': '5.0e4 1.5e5', 'active': '5.0e4 1.5e5', 'alias': 'NH', 'g_alias': 'NH'}
     }
 
     #Dictionary of spectral resolutions
@@ -124,20 +131,17 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
 
     gases = atm_keys[8:]
     gas_names = gases.copy()
-    gas_models = gases.copy()
     for i in range(len(gases)):
-        gsplit = gases[i].split(')')
-        if len(gsplit) > 1:
-            gas = gsplit[-1]
-            iso = gsplit[0].split('(')[-1]
-            gas_names[i] = gas
-            gas_models[i] = iso+gas
+            gas_names[i] = solar_lifetimes[gases[i]]['g_alias']
 
     n_gas = len(gases)
 
     #Add the retrieval parameters
     ret_keys = list(retrieval.keys())
-    ret_vars = ret_keys[10:]
+    if 'RP' in retrieval:
+        ret_vars = ret_keys[11:]
+    else:
+        ret_vars = ret_keys[10:]
     n_vars = len(ret_vars)
 
     #Read in the CFG file and update it to fit our desired atmosphere and retrieval parameters if any of them are already in the CFG
@@ -260,10 +264,6 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
             fn.write(modified_line)
             modified_line = '<SURFACE-EMISSIVITY>{}\n'.format(composition['SURFACE-EMISSIVITY']['value'])
             fn.write(modified_line)
-            if withCont:
-                fn.write('<GENERATOR-CONT-MODEL>Y\n')
-            else:
-                fn.write('<GENERATOR-CONT-MODEL>N\n')
 
             #Add in properties for JWST
             fn.write('<GENERATOR-TELESCOPE>SINGLE\n')
@@ -275,6 +275,10 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
 
             #Add in flux and modeling properties
             fn.write('<GENERATOR-GAS-MODEL>Y\n')
+            if withCont:
+                fn.write('<GENERATOR-CONT-MODEL>Y\n')
+            else:
+                fn.write('<GENERATOR-CONT-MODEL>N\n')
             fn.write('<GENERATOR-LOGRAD>N\n')
             fn.write('<GENERATOR-CONT-STELLAR>Y\n')
             fn.write('<GENERATOR-RADUNITS>Jy\n')
@@ -307,28 +311,35 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                         radWidth = float(line.split()[-2])
                         radHeight = float(line.split()[-1])
             #Work out resolution from dictionary
-            if instrument == 'NIRSPEC':
-                if grating == 'G395M/F290LP':
-                    res_element = np.sqrt(2*np.log(2))*2*0.001440
+            if 'RP' in retrieval:
+                res_element = retrieval['RP']['res_element']
+                res_type = retrieval['RP']['res_type']
+            else:
+                if instrument == 'NIRSPEC':
+                    if grating == 'G395M/F290LP':
+                        res_element = np.sqrt(2*np.log(2))*2*0.001440
+                        res_type = 'um'
+                    elif (grating == 'G395H/F290LP') or (grating == 'G140H/F100LP') or (grating == 'G235H/F170LP'):
+                        res_element = 2700
+                        res_type = 'RP'
+                    elif (grating == 'PRISM/CLEAR'):
+                        res_element = 0.022
+                        res_type = 'um'
+                    # elif grating == 'G395H/F290LP':
+                    #     res_element = np.sqrt(2*np.log(2))*2*7.236e-04
+                    # elif grating == 'G140H/F100LP':
+                    #     res_element = np.sqrt(2*np.log(2))*2*2.388e-04
+                    # elif grating == 'G235H/F170LP':
+                    #     res_element = np.sqrt(2*np.log(2))*2*3.344e-04
+                    else:
+                        res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
+                        res_type = 'um'
+                elif instrument == 'MIRI':
+                    if '1/' in grating:
+                        res_element = np.sqrt(2*np.log(2))*2*0.000828
+                    else:
+                        res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
                     res_type = 'um'
-                elif (grating == 'G395H/F290LP') or (grating == 'G140H/F100LP') or (grating == 'G235H/F170LP'):
-                    res_element = 2700
-                    res_type = 'RP'
-                # elif grating == 'G395H/F290LP':
-                #     res_element = np.sqrt(2*np.log(2))*2*7.236e-04
-                # elif grating == 'G140H/F100LP':
-                #     res_element = np.sqrt(2*np.log(2))*2*2.388e-04
-                # elif grating == 'G235H/F170LP':
-                #     res_element = np.sqrt(2*np.log(2))*2*3.344e-04
-                else:
-                    res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
-                    res_type = 'um'
-            elif instrument == 'MIRI':
-                if '1/' in grating:
-                    res_element = np.sqrt(2*np.log(2))*2*0.000828
-                else:
-                    res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
-                res_type = 'um'
             fn.write('<GENERATOR-RESOLUTION>{}\n'.format(res_element))
             fn.write('<GENERATOR-RESOLUTIONUNIT>{}\n'.format(res_type))
             if mode == 'circle':
@@ -358,7 +369,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                     fn.write('<GENERATOR-BEAM>{}\n'.format(2*outerRadius))
                     fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 else:
-                    fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(psa,outerRadius - innerRadius))
+                    fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(psa,psa))
                     fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 fn.write('<GEOMETRY-OFFSET-EW>0\n')
                 if innerRadius == 0:
