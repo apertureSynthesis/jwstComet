@@ -129,7 +129,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
 
     atm_keys = list(composition.keys())
 
-    gases = atm_keys[8:]
+    gases = atm_keys[9:]
     gas_names = gases.copy()
     for i in range(len(gases)):
             gas_names[i] = solar_lifetimes[gases[i]]['g_alias']
@@ -197,13 +197,15 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                     lifetime_list = ','.join(lifetimes)
                     modified_line = '<ATMOSPHERE-TAU>{}\n'.format(lifetime_list)
                     fn.write(modified_line)
-                    if retrieval['COMA-OPACITY'] == 'thin':
-                        modified_line = '<ATMOSPHERE-CONTINUUM>FluorThin\n'
-                        fn.write(modified_line)
-                elif '<ATMOSPHERE-CONTINUUM>' in line:
-                    continue
                 elif '<OBJECT-DIAMETER>' in line:
                     continue
+                elif '<ATMOSPHERE-WEIGHT>' in line:
+                    if composition['ATMOSPHERE-WEIGHT']['set']:
+                        vexp = composition['ATMOSPHERE-WEIGHT']['value']
+                        modified_line = '<ATMOSPHERE-WEIGHT>{}\n'.format(vexp)
+                        fn.write(modified_line)
+                    else:
+                        fn.write(line)
                 else:
                     fn.write(line)
             # #Add in the atmospheric properties
@@ -248,12 +250,13 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
             lifetime_list = ','.join(lifetimes)
             modified_line = '<ATMOSPHERE-TAU>{}\n'.format(lifetime_list)
             fn.write(modified_line)
-            if retrieval['COMA-OPACITY'] == 'thin':
-                modified_line = '<ATMOSPHERE-CONTINUUM>FluorThin\n'
-                fn.write(modified_line)
+
 
             #Finish adding the continuum properties
-            fn.write('<ATMOSPHERE-CONTINUUM>Rayleigh,Refraction,CIA_all,UV_all\n')
+            if retrieval['COMA-OPACITY'] == 'thin':
+                fn.write('<ATMOSPHERE-CONTINUUM>Rayleigh,Refraction,CIA_all,UV_all,FluorThin\n')
+            else:
+                fn.write('<ATMOSPHERE-CONTINUUM>Rayleigh,Refraction,CIA_all,UV_all\n')
             modified_line = '<SURFACE-GAS-RATIO>{}\n'.format(composition['SURFACE-GAS-RATIO']['value'])
             fn.write(modified_line)
             modified_line = '<SURFACE-GAS-UNIT>{}\n'.format(composition['SURFACE-GAS-RATIO']['unit'])
