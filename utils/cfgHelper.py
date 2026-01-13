@@ -2,6 +2,10 @@ import os,sys
 import numpy as np
 from datetime import datetime
 import pandas as pd
+import importlib.resources
+from pathlib import Path
+from astropy.io import fits
+from scipy.interpolate import interp1d
 
 """
 Set of functions to facilitate writing and sending configuration (CFG) files for PSG runs
@@ -93,18 +97,19 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
         'NH':       {'quiet': '5.0e4 1.5e5', 'active': '5.0e4 1.5e5', 'alias': 'NH', 'g_alias': 'NH'}
     }
 
+
     #Dictionary of spectral resolutions
     resolution = {
         'NIRSPEC':{
-            'PRISM/CLEAR':  {'low': 0.60/30., 'high': 5.30/330.},
-            'G140M/F070LP': {'low': 0.70/500., 'high': 1.26/898.},
-            'G140M/F100LP': {'low': 0.98/699., 'high': 1.88/1343.},
-            'G235M/F170LP': {'low': 1.70/722., 'high': 3.15/1342.},
-            'G395M/F290LP': {'low': 2.88/728., 'high': 5.20/1317.},
-            'G140H/F070LP': {'low': 0.70/1321., 'high': 1.26/2395.},
-            'G140H/F100LP': {'low': 0.98/1849., 'high': 1.87/3675.},
-            'G235H/F170LP': {'low': 1.70/1911., 'high': 3.15/3690.},
-            'G395H/F290LP': {'low': 2.88/1927., 'high': 5.20/3613.}
+            'PRISM/CLEAR':  {'file': 'jwst_nirspec_prism_disp.fits'},
+            'G140M/F070LP': {'file': 'jwst_nirspec_g140m_disp.fits'},
+            'G140M/F100LP': {'file': 'jwst_nirspec_g140m_disp.fits'},
+            'G235M/F170LP': {'file': 'jwst_nirspec_g235m_disp.fits'},
+            'G395M/F290LP': {'file': 'jwst_nirspec_g395m_disp.fits'},
+            'G140H/F070LP': {'file': 'jwst_nirspec_g140h_disp.fits'},
+            'G140H/F100LP': {'file': 'jwst_nirspec_g140h_disp.fits'},
+            'G235H/F170LP': {'file': 'jwst_nirspec_g235h_disp.fits'},
+            'G395H/F290LP': {'file': 'jwst_nirspec_g395h_disp.fits'}
         },
         'MIRI':{
             '1/SHORT': {'low': 4.885/3400, 'high': 5.751/4000},
@@ -319,24 +324,42 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                 res_type = retrieval['RP']['res_type']
             else:
                 if instrument == 'NIRSPEC':
-                    if grating == 'G395M/F290LP':
-                        res_element = np.sqrt(2*np.log(2))*2*0.001440
-                        res_type = 'um'
-                    elif (grating == 'G395H/F290LP') or (grating == 'G140H/F100LP') or (grating == 'G235H/F170LP'):
-                        res_element = 2700
-                        res_type = 'RP'
-                    elif (grating == 'PRISM/CLEAR'):
-                        res_element = 0.022
-                        res_type = 'um'
-                    # elif grating == 'G395H/F290LP':
-                    #     res_element = np.sqrt(2*np.log(2))*2*7.236e-04
-                    # elif grating == 'G140H/F100LP':
-                    #     res_element = np.sqrt(2*np.log(2))*2*2.388e-04
-                    # elif grating == 'G235H/F170LP':
-                    #     res_element = np.sqrt(2*np.log(2))*2*3.344e-04
-                    else:
-                        res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
-                        res_type = 'um'
+                    #PATH to FITS files containing JWST RP vs. wavelength
+                    # rpDir = importlib.resources('jwstComet.RP')
+                    # rpPath = Path(rpDir , resolution[instrument][grating]['file'])
+                    rpPath = importlib.resources.files("jwstComet") / "RP"
+                    rpFile = rpPath / resolution[instrument][grating]['file']
+                    with fits.open(rpFile) as rpF:
+                        rpWave = rpF[1].data['WAVELENGTH']
+                        rpR = rpF[1].data['R']
+
+                    #Read in the FITS file and find the RP for the midpoint wavelength of the extract
+                    # rpFits = fits.open(rpPath)
+                    # rpWave = rpFits[1].data['WAVELENGTH']
+                    # rpR = rpFits[1].data['R']
+                    #Interpolate the dispersion/RP curve
+                    rpCurve = interp1d(rpWave, rpR, kind='cubic')
+                    #Get rp from the midpoint wavelength of the extract
+                    res_element = rpCurve(0.5*(wave[0]+wave[-1]))
+                    res_type = 'RP'
+                    # if grating == 'G395M/F290LP':
+                    #     res_element = np.sqrt(2*np.log(2))*2*0.001440
+                    #     res_type = 'um'
+                    # elif (grating == 'G395H/F290LP') or (grating == 'G140H/F100LP') or (grating == 'G235H/F170LP'):
+                    #     res_element = 2700
+                    #     res_type = 'RP'
+                    # elif (grating == 'PRISM/CLEAR'):
+                    #     res_element = 0.022
+                    #     res_type = 'um'
+                    # # elif grating == 'G395H/F290LP':
+                    # #     res_element = np.sqrt(2*np.log(2))*2*7.236e-04
+                    # # elif grating == 'G140H/F100LP':
+                    # #     res_element = np.sqrt(2*np.log(2))*2*2.388e-04
+                    # # elif grating == 'G235H/F170LP':
+                    # #     res_element = np.sqrt(2*np.log(2))*2*3.344e-04
+                    # else:
+                    #     res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
+                    #     res_type = 'um'
                 elif instrument == 'MIRI':
                     if '1/' in grating:
                         res_element = np.sqrt(2*np.log(2))*2*0.000828
@@ -372,7 +395,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                     fn.write('<GENERATOR-BEAM>{}\n'.format(2*outerRadius))
                     fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 else:
-                    fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(psa,psa))
+                    fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format((outerRadius - innerRadius), psa))
                     fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 fn.write('<GEOMETRY-OFFSET-EW>0\n')
                 if innerRadius == 0:
@@ -408,7 +431,13 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
             fn.write('<DATA>\n')
             for i in range(len(wave)):
                 if not np.isnan(spec[i]):
-                    fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
+                    if (mode == 'azimuthal'):
+                        if ((outerRadius - innerRadius) > psa):
+                            #If extracting from an annulus wider than one pixel, scale the flux by the annulus width
+                            factor = np.round(((outerRadius - innerRadius) / psa))
+                            fn.write('{} {} {}\n'.format(wave[i],spec[i]*factor,err[i]*factor))                            
+                    else:
+                        fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
                 else:
                     continue
             fn.write('</DATA>\n')

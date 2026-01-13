@@ -161,7 +161,7 @@ class Azimuthal(object):
                 maskLo = mask[mask_keys[key]]['start']
                 maskUp = mask[mask_keys[key]]['stop']
                 mask_region = np.where((wvls>maskLo.value) & (wvls<maskUp.value))
-                sigma[mask_region] *= 1e25
+                sigma[mask_region] = np.nanmax(spec[mask_region])
 
 
         #Save the file

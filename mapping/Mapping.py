@@ -18,7 +18,9 @@ class Mapping(object):
         self.name = self.__class__.__name__
 
     @u.quantity_input(radAp=u.arcsec)
-    def makeMaps(self,cubeFiles,specStem,csvFile,waveLo,waveUp,radAp,name,objectType,composition,retrieval,withCont=False,smooth=None,box=None,withEph=True,local=True,tempFix=False,tempFile=None,masterATM=False,masterATMFile=None):
+    def makeMaps(self,cubeFiles,specStem,csvFile,waveLo,waveUp,radAp,name,objectType,composition,retrieval,withCont=False,smooth=None,
+                 box=None,withEph=True,local=True,tempFix=False,tempFile=None,masterATM=False,masterATMFile=None,
+                 compFix=False,compFile=None,compKeys=None,compNames=None,compUnits=None):
         """
         Read in a JWST IFU cube. Find the photocenter. Extract spectra across the
         entire cube. Send them to the PSG for analysis. Plot the model and extracted spectrum.
@@ -42,6 +44,10 @@ class Mapping(object):
             local - are we interrogating a local copy of the PSG or instead sending requests to the online server
             tempFix - are we fixing the temperature to pre-determined values? optional
             tempFile - FITS file containing temperature values (as function of pixel index) if using prefixed values
+            compFix - are we fixing other compositional variables to pre-determined values? optional
+            compFile - CSV file containing pixel-by-pixel values for fixed composition variables is using
+            compValues - names for composition variable to be fixed
+            compUnits - units for composition variables to be fixed
 
         Outputs
             Saves an ASCII file containing the extracted spectrum and header information at each pixel. Saves the PSG model files from each pixel. 
@@ -96,6 +102,11 @@ class Mapping(object):
             #Interpolate
             temp_model = interp1d(rho[:len(para_temps)]*pScale.value,para_temps,kind='linear',fill_value=(para_temps[0],para_temps[-1]),bounds_error=False)
 
+        #If there is a pixel-by-pixel map for use in fixing some parameters, read those in
+        if compFix:
+            #Read in the pixel-by-pixel composition map
+            dfComp = pd.read_csv(compFile)
+
         #Now extract the spatially binned (if requested) maps
         for x in range(x0, xf):
             for y in range(y0, yf):
@@ -111,6 +122,12 @@ class Mapping(object):
                     if tempFix:
                         qtemp = temp_model(drArc)
                         composition['TEMPERATURE']['value'] = qtemp
+
+                    if compFix:
+                        for ci in range(len(compKeys)):
+                            val = dfComp[(dfComp['X-Index']==x) & (dfComp['Y-Index']==y)][compNames[ci]].item()
+                            composition[compKeys[ci]]['value'] = val
+                            composition[compKeys[ci]]['unit'] = compUnits[ci]
 
                     #Perform the extract
                     specFile = specStem+'-{:.2f}-x-{:.2f}-arcsecRadAp-{:.1f}-arcsecXoff-{:.1f}-arcsecYoff-{:.2f}um-to-{:.2f}um.txt'.format(radAp[0].value,radAp[1].value,dxArc.value,dyArc.value,min(waveLo).value,max(waveUp).value)
