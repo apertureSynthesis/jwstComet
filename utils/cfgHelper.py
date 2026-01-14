@@ -391,12 +391,12 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                     innerRadius = float(line.split()[-1])
                 if '#Outer annulus radius (arcsec)' in line:
                     outerRadius = float(line.split()[-1])
-                if innerRadius == 0:
-                    fn.write('<GENERATOR-BEAM>{}\n'.format(2*outerRadius))
-                    fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
-                else:
-                    fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format((outerRadius - innerRadius), psa))
-                    fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
+                # if innerRadius == 0:
+                #     fn.write('<GENERATOR-BEAM>{}\n'.format(2*outerRadius))
+                #     fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
+                # else:
+                fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format((outerRadius - innerRadius), psa))
+                fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 fn.write('<GEOMETRY-OFFSET-EW>0\n')
                 if innerRadius == 0:
                     fn.write('<GEOMETRY-OFFSET-NS>0\n')
@@ -431,13 +431,19 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
             fn.write('<DATA>\n')
             for i in range(len(wave)):
                 if not np.isnan(spec[i]):
-                    if (mode == 'azimuthal'):
-                        if ((outerRadius - innerRadius) > psa):
-                            #If extracting from an annulus wider than one pixel, scale the flux by the annulus width
-                            factor = np.round(((outerRadius - innerRadius) / psa))
-                            fn.write('{} {} {}\n'.format(wave[i],spec[i]*factor,err[i]*factor))                            
-                    else:
-                        fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
+                    fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
+                    # if (mode == 'azimuthal'):
+                    #         if ((outerRadius - innerRadius) > psa):
+                    #             if innerRadius != 0:
+                    #                 #If extracting from an annulus wider than one pixel, scale the flux by the annulus width
+                    #                 factor = np.round(((outerRadius - innerRadius) / psa))
+                    #                 fn.write('{} {} {}\n'.format(wave[i],spec[i]*factor,err[i]*factor))  
+                    #             # else:
+                    #             #     factor = np.round( np.pi*(outerRadius / psa)**2 )
+                    #             #     fn.write('{} {} {}\n'.format(wave[i],spec[i]*factor,err[i]*factor))
+
+                    # else:
+                    #     fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
                 else:
                     continue
             fn.write('</DATA>\n')

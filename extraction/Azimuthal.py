@@ -3,7 +3,7 @@ import astropy.units as u
 import pandas as pd
 import matplotlib.pyplot as plt
 from astropy.io import fits
-from photutils.aperture import CircularAperture, CircularAnnulus, ApertureStats
+from photutils.aperture import CircularAperture, CircularAnnulus, ApertureStats, aperture_photometry
 from jwstComet.utils import readCube, subchannel_splice, readHeader
 
 class Azimuthal(object):
@@ -104,20 +104,27 @@ class Azimuthal(object):
                 #Take the weighted average: Sum(w_i * x_i) / Sum(w_i), w_i = 1/noise_i^2
                 #Uncertainty in weighted average: 1 / sqrt(Sum(w_i))
                 #Taylor, An Introduction to Error Analysis
-                # apPhot = ApertureStats(data = sci_img*wgt_img, aperture = apEx, sum_method='subpixel', subpixels=5)
-                # wtPhot = ApertureStats(data = wgt_img, aperture = apEx, sum_method='subpixel', subpixels=5)
+                apPhot = ApertureStats(data = sci_img*wgt_img, aperture = apEx, sum_method='subpixel', subpixels=10)
+                wtPhot = ApertureStats(data = wgt_img, aperture = apEx, sum_method='subpixel', subpixels=10)
 
 
-                # flux_jy = ((apPhot.sum / wtPhot.sum)).to(u.Jy)
-                # noise_jy = ((1./np.sqrt(wtPhot.sum))).to(u.Jy)
+                flux_jy = ((apPhot.sum / wtPhot.sum)).to(u.Jy)
+                noise_jy = ((1./np.sqrt(wtPhot.sum))).to(u.Jy)
 
                 # #Instead take an average of pixels either entirely in or out of aperture
-                apPhot = ApertureStats(data = sci_img, aperture = apEx, error = err_img, sum_method='center')
-                # #Number of unmasked pixels
-                npix = sum(sum(~apPhot.data_cutout.mask))
+                #apPhot = ApertureStats(data = sci_img, aperture = apEx, error = err_img, sum_method='center')
 
-                flux_jy = (apPhot.mean).to(u.Jy)
-                noise_jy = (apPhot.sum_err/npix).to(u.Jy)
+                # #Take highly-subpixel-sampled spectra
+                # apPhot = ApertureStats(data = sci_img, aperture = apEx, error = err_img, sum_method='subpixel', subpixels=10)
+                # npix = sum(sum(~apPhot.data_cutout.mask))
+                # #print(f'Number of pixels in extract: {npix}')
+                # flux_jy = (apPhot.mean).to(u.Jy)
+                # noise_jy = (apPhot.std).to(u.Jy) / np.sqrt(npix)
+
+                if (outerRadPix - innerRadPix).value > 1:
+                    annulusWidth = (outerRadPix - innerRadPix).value
+                    flux_jy *= annulusWidth
+                    noise_jy *= annulusWidth
 
                 spec[i] = flux_jy.value
                 sigma[i] = noise_jy.value
