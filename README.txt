@@ -3,7 +3,10 @@ Its primary purpose is to serve as a utility tool for generating extracts with v
 viewing geometries from JWST IFU spectra using tools available in the astropy and photutils 
 packages. Its secondary purpose is to automate communication with the NASA Planetary Spectrum 
 Generator (PSG) API to facilitate performing retrievals or other analyses of the aforementioned 
-JWST comet spectra.
+JWST comet spectra. 
+
+Note that a local installation of the PSG is highly recommended for the mapping routine, which 
+will make hundreds of calls to the API in a short timeframe.
 
 Extraction:
 -Beam: extracts a spectrum from an IFU cube at a specified position
