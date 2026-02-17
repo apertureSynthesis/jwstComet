@@ -1,4 +1,9 @@
-This package provides utilities for analyzing comet IFU spectra acquired with the JWST.
+This package provides utilities for analyzing comet IFU spectra acquired with the JWST. 
+Its primary purpose is to serve as a utility tool for generating extracts with various 
+viewing geometries from JWST IFU spectra using tools available in the astropy and photutils 
+packages. Its secondary purpose is to automate communication with the NASA Planetary Spectrum 
+Generator (PSG) API to facilitate performing retrievals or other analyses of the aforementioned 
+JWST comet spectra.
 
 Extraction:
 -Beam: extracts a spectrum from an IFU cube at a specified position
