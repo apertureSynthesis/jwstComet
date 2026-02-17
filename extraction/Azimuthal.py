@@ -13,7 +13,8 @@ class Azimuthal(object):
         self.name = self.__class__.__name__
 
     @u.quantity_input(innerRadius = u.arcsec, outerRadius = u.arcsec)
-    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,innerRadius=0.0*u.arcsec,outerRadius=0.1*u.arcsec,mask=None,withPlots=False,split=None):
+    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,innerRadius=0.0*u.arcsec,outerRadius=0.1*u.arcsec,
+                    method='subpixel',subpixels=10,mask=None,withPlots=False,split=None):
         """
         Extract a spectrum within a specified annulus, take the azimuthal average, and save it to a text file.
         Plot the aperture and extracted spectrum if desired.
@@ -25,6 +26,8 @@ class Azimuthal(object):
             waveUp - highest wavelength for extraction. preferred unit is microns. can be a list or single value
             innerRadius - inner radius (arcsec) for the annulus
             outerRadius - outer radius (arcsec) for the annulus
+            method - extraction method for photutils, choosing from options of 'subpixel', 'center', or 'exact'
+            subpixels - number of subpixels to be used if subpixel extraction is chosen
             mask - dictionary containing lower and upper wavelength range to be masked. optional
             withPlots - whether we plot the results. optional
             split - whether we split the array and only analyze a subsection. choices are 'upper', 'lower', 'left', 'right'. optional
@@ -104,23 +107,22 @@ class Azimuthal(object):
                 #Take the weighted average: Sum(w_i * x_i) / Sum(w_i), w_i = 1/noise_i^2
                 #Uncertainty in weighted average: 1 / sqrt(Sum(w_i))
                 #Taylor, An Introduction to Error Analysis
-                apPhot = ApertureStats(data = sci_img*wgt_img, aperture = apEx, sum_method='subpixel', subpixels=10)
-                wtPhot = ApertureStats(data = wgt_img, aperture = apEx, sum_method='subpixel', subpixels=10)
+                if method == 'subpixel':
+                    apPhot = ApertureStats(data = sci_img*wgt_img, aperture = apEx, sum_method='subpixel', subpixels=subpixels)
+                    wtPhot = ApertureStats(data = wgt_img, aperture = apEx, sum_method='subpixel', subpixels=subpixels)
+                elif method == 'center':
+                    apPhot = ApertureStats(data = sci_img*wgt_img, aperture = apEx, sum_method='center')
+                    wtPhot = ApertureStats(data = wgt_img, aperture = apEx, sum_method='center')
+                elif method == 'exact':
+                    apPhot = ApertureStats(data = sci_img*wgt_img, aperture = apEx, sum_method='exact')
+                    wtPhot = ApertureStats(data = wgt_img, aperture = apEx, sum_method='exact')                    
 
 
                 flux_jy = ((apPhot.sum / wtPhot.sum)).to(u.Jy)
                 noise_jy = ((1./np.sqrt(wtPhot.sum))).to(u.Jy)
 
-                # #Instead take an average of pixels either entirely in or out of aperture
-                #apPhot = ApertureStats(data = sci_img, aperture = apEx, error = err_img, sum_method='center')
-
-                # #Take highly-subpixel-sampled spectra
-                # apPhot = ApertureStats(data = sci_img, aperture = apEx, error = err_img, sum_method='subpixel', subpixels=10)
-                # npix = sum(sum(~apPhot.data_cutout.mask))
-                # #print(f'Number of pixels in extract: {npix}')
-                # flux_jy = (apPhot.mean).to(u.Jy)
-                # noise_jy = (apPhot.std).to(u.Jy) / np.sqrt(npix)
-
+                #If the annulus is larger than one pixel, scale the fluxes by the width
+                #to compensate for the radial decay in flux with distance
                 if (outerRadPix - innerRadPix).value > 1:
                     annulusWidth = (outerRadPix - innerRadPix).value
                     flux_jy *= annulusWidth
@@ -143,9 +145,9 @@ class Azimuthal(object):
                 axes[1].set_title('Extracted Spectrum for Cube #{}'.format(j))
                 plt.show()
 
-            combined_waves.append(wvls.tolist())
-            combined_specs.append(spec.tolist())
-            combined_sigmas.append(sigma.tolist())
+        combined_waves.append(wvls.tolist())
+        combined_specs.append(spec.tolist())
+        combined_sigmas.append(sigma.tolist())
 
 
         if len(cubeFiles) == 1:

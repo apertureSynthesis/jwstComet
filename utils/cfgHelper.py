@@ -48,7 +48,7 @@ def ephCFG(specFile,name,objectType,midtime,local=True):
 
 
 
-def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True, masterATM=False, masterATMFile=None):
+def atmCFG(specFile, resFile, composition, retrieval_options, retrieval, mode, withCont, local=True, masterATM=False, masterATMFile=None):
     """
     Read in the ephemeris CFG file. Incorporate it along with user-defined modeling parameters into a new CFG file.
     Read in the extracted spectrum and header information. Send it off to the PSG for modeling.
@@ -68,39 +68,44 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
     #Read in the data file
     wave, spec, err = np.loadtxt(specFile, unpack=1)
 
-    #Dictionary of solar photolysis lifetimes
+    #Dictionary of solar photolysis lifetimes, molecules, and PSG model names.
+    #Split by quiet vs. active Sun values (Huebner & Mukherjee 2015)
     solar_lifetimes = {
-        'H2O':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'H2O', 'g_alias': 'H2O'},
-        'o-H2O':    {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'H2O_ortho', 'g_alias': 'H2O'},
-        'p-H2O':    {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'H2O_para', 'g_alias': 'H2O'},
-        'HDO':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'HDO', 'g_alias': 'H2O'},
-        'OHP':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'OHP', 'g_alias': 'OH'},
-        'CO2':      {'quiet': 4.948e5, 'active': 2.101e5, 'alias': 'CO2', 'g_alias': 'CO2'},
-        '(13)CO2':    {'quiet': 4.948e5, 'active': 2.101e5, 'alias': '13CO2', 'g_alias': 'CO2'},
-        'OCS':      {'quiet': 9.807e3, 'active': 7.723e3, 'alias': 'OCS', 'g_alias': 'OCS'},
-        'HCN':      {'quiet': 7.662e4, 'active': 3.085e4, 'alias': 'HCN', 'g_alias': 'HCN'},
-        'CO':       {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'CO', 'g_alias': 'CO'},
-        '13CO':     {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'CO_1316', 'g_alias': 'CO'},
-        'C17O':     {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'CO_1217', 'g_alias': 'CO'},
-        'C18O':     {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'CO_1218', 'g_alias': 'CO'},
-        'H2CO':     {'quiet': 4.649e3, 'active': 4.369e3, 'alias': 'H2CO', 'g_alias': 'H2CO'},
-        'CH4':      {'quiet': 1.317e5, 'active': 5.381e4, 'alias': 'CH4', 'g_alias': 'CH4'},
-        'CH3D':     {'quiet': 1.317e5, 'active': 5.381e4, 'alias': 'CH3D', 'g_alias': 'CH4'},
-        'C2H6':     {'quiet': 9.491e4, 'active': 3.978e4, 'alias': 'C2H6', 'g_alias': 'C2H6'},
-        'CH3OH':    {'quiet': 8.787e4, 'active': 4.816e4, 'alias': 'CH3OH', 'g_alias': 'CH3OH'},
-        'CH3OH_V9': {'quiet': 8.787e4, 'active': 4.816e4, 'alias': 'CH3OH_V9', 'g_alias': 'CH3OH'},
-        'NH3':      {'quiet': 5.658e3, 'active': 5.022e3, 'alias': 'NH3', 'g_alias': 'NH3'},
-        'C2H2':     {'quiet': 3.269e4, 'active': 1.691e4, 'alias': 'C2H2', 'g_alias': 'C2H2'},
-        'CN':       {'quiet': '1.3e4 2.1e5', 'active': '1.3e4 2.1e5', 'alias': 'CN', 'g_alias': 'CN'},
-        'NH2':      {'quiet': '4.1e3 6.2e4', 'active': '4.1e3 6.2e4', 'alias': 'NH2', 'g_alias': 'NH2'},
-        'H2CO-Daughter': {'quiet': '1.428e3 4.649e3', 'active': '1.428e3 4.369e3', 'alias': 'H2CO', 'g_alias': 'H2CO'},
-        'NH':       {'quiet': '5.0e4 1.5e5', 'active': '5.0e4 1.5e5', 'alias': 'NH', 'g_alias': 'NH'}
+        'H2O':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'GSFC[H2O]', 'g_alias': 'H2O'},
+        'o-H2O':    {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'GSFC[H2O_ortho]', 'g_alias': 'H2O'},
+        'p-H2O':    {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'GSFC[H2O_para]', 'g_alias': 'H2O'},
+        'HDO':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'GSFC[HDO]', 'g_alias': 'H2O'},
+        'OHP':      {'quiet': 8.294e4, 'active': 4.539e4, 'alias': 'GSFC[OHP]', 'g_alias': 'OH'},
+        'CO2':      {'quiet': 4.948e5, 'active': 2.101e5, 'alias': 'GSFC[CO2]', 'g_alias': 'CO2'},
+        '(13)CO2':    {'quiet': 4.948e5, 'active': 2.101e5, 'alias': 'GSFC[13CO2]', 'g_alias': 'CO2'},
+        '(16)O(12)C(18)O': {'quiet': 4.948e5, 'active': 2.101e5, 'alias': 'HIT[2:3]', 'g_alias': 'CO2'},
+        '(16)O(13)C(18)O': {'quiet': 4.948e5, 'active': 2.101e5, 'alias': 'HIT[2:5]', 'g_alias': 'CO2'},
+        'OCS':      {'quiet': 9.807e3, 'active': 7.723e3, 'alias': 'GSFC[OCS]', 'g_alias': 'OCS'},
+        'HCN':      {'quiet': 7.662e4, 'active': 3.085e4, 'alias': 'GSFC[HCN]', 'g_alias': 'HCN'},
+        'CO':       {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'GSFC[CO]', 'g_alias': 'CO'},
+        '13CO':     {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'GSFC[CO_1316]', 'g_alias': 'CO'},
+        'C17O':     {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'GSFC[CO_1217]', 'g_alias': 'CO'},
+        'C18O':     {'quiet': 1.335e6, 'active': 5.320e5, 'alias': 'GSFC[CO_1218]', 'g_alias': 'CO'},
+        'H2CO':     {'quiet': 4.649e3, 'active': 4.369e3, 'alias': 'GSFC[H2CO]', 'g_alias': 'H2CO'},
+        'CH4':      {'quiet': 1.317e5, 'active': 5.381e4, 'alias': 'GSFC[CH4]', 'g_alias': 'CH4'},
+        'CH3D':     {'quiet': 1.317e5, 'active': 5.381e4, 'alias': 'GSFC[CH3D]', 'g_alias': 'CH4'},
+        '13CH4':    {'quiet': 1.317e5, 'active': 5.381e4, 'alias': 'HIT[6:2]', 'g_alias': 'CH4'},
+        'C2H6':     {'quiet': 9.491e4, 'active': 3.978e4, 'alias': 'GSFC[C2H6]', 'g_alias': 'C2H6'},
+        'CH3OH':    {'quiet': 8.787e4, 'active': 4.816e4, 'alias': 'GSFC[CH3OH]', 'g_alias': 'CH3OH'},
+        'CH3OH_V9': {'quiet': 8.787e4, 'active': 4.816e4, 'alias': 'GSFC[CH3OH_V9]', 'g_alias': 'CH3OH'},
+        'NH3':      {'quiet': 5.658e3, 'active': 5.022e3, 'alias': 'GSFC[NH3]', 'g_alias': 'NH3'},
+        'C2H2':     {'quiet': 3.269e4, 'active': 1.691e4, 'alias': 'GSFC[C2H2]', 'g_alias': 'C2H2'},
+        'CN':       {'quiet': '1.3e4 2.1e5', 'active': '1.3e4 2.1e5', 'alias': 'GSFC[CN]', 'g_alias': 'CN'},
+        'NH2':      {'quiet': '4.1e3 6.2e4', 'active': '4.1e3 6.2e4', 'alias': 'GSFC[NH2]', 'g_alias': 'NH2'},
+        'H2CO-Daughter': {'quiet': '1.428e3 4.649e3', 'active': '1.428e3 4.369e3', 'alias': 'GSFC[H2CO]', 'g_alias': 'H2CO'},
+        'NH':       {'quiet': '5.0e4 1.5e5', 'active': '5.0e4 1.5e5', 'alias': 'GSFC[NH]', 'g_alias': 'NH'},
+        'CH3CN': {'quiet': 1.05e5, 'active': 1.05e5, 'alias': 'XSEC[75-05-8]', 'g_alias': 'CH3CN'},
     }
 
 
     #Dictionary of spectral resolutions
     resolution = {
-        'NIRSPEC':{
+        'NIRSPEC':{ #For retrieving from the STScI provided files
             'PRISM/CLEAR':  {'file': 'jwst_nirspec_prism_disp.fits'},
             'G140M/F070LP': {'file': 'jwst_nirspec_g140m_disp.fits'},
             'G140M/F100LP': {'file': 'jwst_nirspec_g140m_disp.fits'},
@@ -111,7 +116,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
             'G235H/F170LP': {'file': 'jwst_nirspec_g235h_disp.fits'},
             'G395H/F290LP': {'file': 'jwst_nirspec_g395h_disp.fits'}
         },
-        'MIRI':{
+        'MIRI':{ #Based on ranges of values given in Labiano+2021. STScI doesn't currently have comparable curves as for NIRSpec
             '1/SHORT': {'low': 4.885/3400, 'high': 5.751/4000},
             '1/MEDIUM': {'low': 5.634/3420, 'high': 6.632/3990},
             '1/LONG': {'low': 6.408/3330, 'high': 7.524/3840},
@@ -134,6 +139,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
 
     atm_keys = list(composition.keys())
 
+    #For better or worse, we hard code an order where the gases start appearing in the dictionary.
     gases = atm_keys[9:]
     gas_names = gases.copy()
     for i in range(len(gases)):
@@ -142,11 +148,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
     n_gas = len(gases)
 
     #Add the retrieval parameters
-    ret_keys = list(retrieval.keys())
-    if 'RP' in retrieval:
-        ret_vars = ret_keys[11:]
-    else:
-        ret_vars = ret_keys[10:]
+    ret_vars = list(retrieval.keys())
     n_vars = len(ret_vars)
 
     #Read in the CFG file and update it to fit our desired atmosphere and retrieval parameters if any of them are already in the CFG
@@ -177,7 +179,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                     modified_line = '<ATMOSPHERE-GAS>{}\n'.format(gas_list)
                     fn.write(modified_line)
                 elif '<ATMOSPHERE-TYPE>' in line:
-                    models = ['GSFC[' + solar_lifetimes[i]['alias'] + ']' for i in gases]
+                    models = [solar_lifetimes[i]['alias'] for i in gases]
                     model_list = ','.join(models)
                     modified_line = '<ATMOSPHERE-TYPE>{}\n'.format(model_list)
                     fn.write(modified_line)
@@ -213,37 +215,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                         fn.write(line)
                 else:
                     fn.write(line)
-            # #Add in the atmospheric properties
-            # modified_line = '<ATMOSPHERE-STRUCTURE>Coma\n'
-            # fn.write(modified_line)
 
-            # modified_line = '<ATMOSPHERE-PRESSURE>{}\n'.format(composition['COMA-ACTIVITY']['value'])
-            # fn.write(modified_line)
-
-            # modified_line = '<ATMOSPHERE-TEMPERATURE>{}\n'.format(composition['TEMPERATURE']['value'])
-            # fn.write(modified_line)
-
-            # modified_line = '<ATMOSPHERE-NGAS>{}\n'.format(n_gas)
-            # fn.write(modified_line)
-
-            # gas_list = ','.join(gases)
-            # modified_line = '<ATMOSPHERE-GAS>{}\n'.format(gas_list)
-            # fn.write(modified_line)
-
-            # models = ['GSFC[' + solar_lifetimes[i]['alias'] + ']' for i in gases]
-            # model_list = ','.join(models)
-            # modified_line = '<ATMOSPHERE-TYPE>{}\n'.format(model_list)
-            # fn.write(modified_line)
-
-            # abunds = [str(composition[i]['value']) for i in gases]
-            # abund_list = ','.join(abunds)
-            # modified_line = '<ATMOSPHERE-ABUN>{}\n'.format(abund_list)
-            # fn.write(modified_line)
-
-            # units = [composition[i]['unit'] for i in gases]
-            # unit_list = ','.join(units)
-            # modified_line = '<ATMOSPHERE-UNIT>{}\n'.format(unit_list)
-            # fn.write(modified_line)
 
             if composition['Solar Activity'] == 'active':
                 lifetimes = [str(solar_lifetimes[i]['active']) for i in gases]
@@ -258,7 +230,7 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
 
 
             #Finish adding the continuum properties
-            if retrieval['COMA-OPACITY'] == 'thin':
+            if retrieval_options['COMA-OPACITY'] == 'thin':
                 fn.write('<ATMOSPHERE-CONTINUUM>Rayleigh,Refraction,CIA_all,UV_all,FluorThin\n')
             else:
                 fn.write('<ATMOSPHERE-CONTINUUM>Rayleigh,Refraction,CIA_all,UV_all\n')
@@ -318,54 +290,53 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                     if '#Aperture size (arcsec)' in line:
                         radWidth = float(line.split()[-2])
                         radHeight = float(line.split()[-1])
-            #Work out resolution from dictionary
-            if 'RP' in retrieval:
-                res_element = retrieval['RP']['res_element']
-                res_type = retrieval['RP']['res_type']
+
+            #Work out resolution from user-defined retrieval_options dictionary
+            if 'RP' in retrieval_options:
+                res_element = retrieval_options['RP']['res_element']
+                res_type = retrieval_options['RP']['res_type']
+                print('Using manual resolution')
+            elif 'RP-list' in retrieval_options:
+                if wave[-1] <= 1.80:
+                    res_element = 0.470
+                elif (wave[0] > 1.80) & (wave[-1] <= 3.20):
+                    res_element = 0.790
+                elif (wave[0] > 3.20) & (wave[-1] <= 5.10):
+                    res_element = 1.320
+                else:
+                    res_element = 1.700
+                res_type = 'nm'
+                print('Using manual wavelength-derived resolution elements')
             else:
+                print('Using STScI RP/dispersion lookup table')
                 if instrument == 'NIRSPEC':
                     #PATH to FITS files containing JWST RP vs. wavelength
-                    # rpDir = importlib.resources('jwstComet.RP')
-                    # rpPath = Path(rpDir , resolution[instrument][grating]['file'])
                     rpPath = importlib.resources.files("jwstComet") / "RP"
                     rpFile = rpPath / resolution[instrument][grating]['file']
                     with fits.open(rpFile) as rpF:
                         rpWave = rpF[1].data['WAVELENGTH']
+                        rpD = rpF[1].data['DLDS']
                         rpR = rpF[1].data['R']
 
                     #Read in the FITS file and find the RP for the midpoint wavelength of the extract
-                    # rpFits = fits.open(rpPath)
-                    # rpWave = rpFits[1].data['WAVELENGTH']
-                    # rpR = rpFits[1].data['R']
-                    #Interpolate the dispersion/RP curve
-                    rpCurve = interp1d(rpWave, rpR, kind='cubic')
-                    #Get rp from the midpoint wavelength of the extract
-                    res_element = rpCurve(0.5*(wave[0]+wave[-1]))
-                    res_type = 'RP'
-                    # if grating == 'G395M/F290LP':
-                    #     res_element = np.sqrt(2*np.log(2))*2*0.001440
-                    #     res_type = 'um'
-                    # elif (grating == 'G395H/F290LP') or (grating == 'G140H/F100LP') or (grating == 'G235H/F170LP'):
-                    #     res_element = 2700
-                    #     res_type = 'RP'
-                    # elif (grating == 'PRISM/CLEAR'):
-                    #     res_element = 0.022
-                    #     res_type = 'um'
-                    # # elif grating == 'G395H/F290LP':
-                    # #     res_element = np.sqrt(2*np.log(2))*2*7.236e-04
-                    # # elif grating == 'G140H/F100LP':
-                    # #     res_element = np.sqrt(2*np.log(2))*2*2.388e-04
-                    # # elif grating == 'G235H/F170LP':
-                    # #     res_element = np.sqrt(2*np.log(2))*2*3.344e-04
-                    # else:
-                    #     res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
-                    #     res_type = 'um'
+                    #Interpolate the dispersion/RP curve based on user preference
+                    if retrieval_options['RP-type'] == 'dispersion':
+                        rpCurve = interp1d(rpWave, rpD, kind='cubic')
+                        #Get rp from the midpoint wavelength of the extract
+                        res_element = np.sqrt(2*np.log(2))*2 * rpCurve(0.5*(wave[0]+wave[-1]))
+                        res_type = 'um'
+                    else:
+                        rpCurve = interp1d(rpWave, rpR, kind='cubic')
+                        res_element = rpCurve(0.5*(wave[0]+wave[-1]))
+                        res_type = 'RP'
                 elif instrument == 'MIRI':
                     if '1/' in grating:
                         res_element = np.sqrt(2*np.log(2))*2*0.000828
                     else:
                         res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
                     res_type = 'um'
+            print(res_element,res_type)
+            #Work out the beam size and geometry
             fn.write('<GENERATOR-RESOLUTION>{}\n'.format(res_element))
             fn.write('<GENERATOR-RESOLUTIONUNIT>{}\n'.format(res_type))
             if mode == 'circle':
@@ -391,10 +362,6 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
                     innerRadius = float(line.split()[-1])
                 if '#Outer annulus radius (arcsec)' in line:
                     outerRadius = float(line.split()[-1])
-                # if innerRadius == 0:
-                #     fn.write('<GENERATOR-BEAM>{}\n'.format(2*outerRadius))
-                #     fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
-                # else:
                 fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format((outerRadius - innerRadius), psa))
                 fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 fn.write('<GEOMETRY-OFFSET-EW>0\n')
@@ -410,17 +377,18 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
             fn.write('<OBJECT-DIAMETER>{}\n'.format(composition['DIAMETER']['value']))                
 
             #Hard code some retrieval preferences, make room to update later
-            fn.write('<RETRIEVAL-GAMMA>{}\n'.format(retrieval['GAMMA']))
+            fn.write('<RETRIEVAL-GAMMA>{}\n'.format(retrieval_options['GAMMA']))
             fn.write('<RETRIEVAL-ALPHA>\n')
-            fn.write('<RETRIEVAL-FLUXSCALER>{}\n'.format(retrieval['FLUXSCALER']))
-            fn.write('<RETRIEVAL-FITTELLURIC>{}\n'.format(retrieval['FITTELLURIC']))
-            fn.write('<RETRIEVAL-FITGAIN>{}\n'.format(retrieval['FITGAIN']))
-            fn.write('<RETRIEVAL-FITGAIN-PHOTOMETRIC>{}\n'.format(retrieval['FITGAIN-PHOTOMETRIC']))
-            fn.write('<RETRIEVAL-REMOVEOFFSET>{}\n'.format(retrieval['REMOVEOFFSET']))
-            fn.write('<RETRIEVAL-REMOVEFRINGE>{}\n'.format(retrieval['REMOVEFRINGE']))
-            fn.write('<RETRIEVAL-FITSTELLAR>{}\n'.format(retrieval['FITSTELLAR']))
-            fn.write('<RETRIEVAL-FITFREQ>{}\n'.format(retrieval['FITFREQ']))
+            fn.write('<RETRIEVAL-FLUXSCALER>{}\n'.format(retrieval_options['FLUXSCALER']))
+            fn.write('<RETRIEVAL-FITTELLURIC>{}\n'.format(retrieval_options['FITTELLURIC']))
+            fn.write('<RETRIEVAL-FITGAIN>{}\n'.format(retrieval_options['FITGAIN']))
+            fn.write('<RETRIEVAL-FITGAIN-PHOTOMETRIC>{}\n'.format(retrieval_options['FITGAIN-PHOTOMETRIC']))
+            fn.write('<RETRIEVAL-REMOVEOFFSET>{}\n'.format(retrieval_options['REMOVEOFFSET']))
+            fn.write('<RETRIEVAL-REMOVEFRINGE>{}\n'.format(retrieval_options['REMOVEFRINGE']))
+            fn.write('<RETRIEVAL-FITSTELLAR>{}\n'.format(retrieval_options['FITSTELLAR']))
+            fn.write('<RETRIEVAL-FITFREQ>{}\n'.format(retrieval_options['FITFREQ']))
             fn.write('<RETRIEVAL-FREQSHIFT>\n')
+            fn.write('<RETRIEVAL-FLAGS>Y,Y,{},Y,Y\n'.format(retrieval_options['SCALE-SIGMAS']))
             fn.write('<RETRIEVAL-NVARS>{}\n'.format(n_vars))
             fn.write('<RETRIEVAL-VARIABLES>{}\n'.format(','.join(ret_vars)))
 
@@ -432,18 +400,6 @@ def atmCFG(specFile, resFile, composition, retrieval, mode, withCont, local=True
             for i in range(len(wave)):
                 if not np.isnan(spec[i]):
                     fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
-                    # if (mode == 'azimuthal'):
-                    #         if ((outerRadius - innerRadius) > psa):
-                    #             if innerRadius != 0:
-                    #                 #If extracting from an annulus wider than one pixel, scale the flux by the annulus width
-                    #                 factor = np.round(((outerRadius - innerRadius) / psa))
-                    #                 fn.write('{} {} {}\n'.format(wave[i],spec[i]*factor,err[i]*factor))  
-                    #             # else:
-                    #             #     factor = np.round( np.pi*(outerRadius / psa)**2 )
-                    #             #     fn.write('{} {} {}\n'.format(wave[i],spec[i]*factor,err[i]*factor))
-
-                    # else:
-                    #     fn.write('{} {} {}\n'.format(wave[i],spec[i],err[i]))
                 else:
                     continue
             fn.write('</DATA>\n')

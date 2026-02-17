@@ -14,7 +14,8 @@ class Beam(object):
         self.name = self.__class__.__name__
 
     @u.quantity_input(radAp=u.arcsec, xOffset=u.arcsec, yOffset=u.arcsec)
-    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,mode='circle',smooth=None,mask=None,withPlots=False,xCenter=None,yCenter=None):
+    def extractSpec(self,cubeFiles,specFile,waveLo,waveUp,radAp,xOffset=0.0*u.arcsec,yOffset=0.0*u.arcsec,mode='circle',
+                    method='subpixel',subpixels=10,smooth=None,mask=None,withPlots=False,xCenter=None,yCenter=None):
         """
         Extract a spectrum at the specified position and save it to a text file.
         Plot the aperture and extracted spectrum if desired
@@ -28,6 +29,8 @@ class Beam(object):
             xOffset - horizontal offset of the center of the extraction aperture from the photocenter in arcseconds
             yOffset - vertical offset of the center of the extraction aperture from the photocenter in arcseconds
             mode - extraction mode/aperture shape. options are 'circle' or 'rectangle'
+            method - extraction method for photutils, choosing from options of 'subpixel', 'center', or 'exact'
+            subpixels - number of subpixels to be used if subpixel extraction is chosen
             smooth - kernel length for Box2DKernel smoothing of the cube. optional.
             mask - dictionary containing lower and upper wavelength range to be masked. optional
             withPlots - whether we plot the results. optional
@@ -95,7 +98,6 @@ class Beam(object):
                 hpix = (radAp[1]).to(u.pixel,pixscale)
                 apCen = (sciCube.xcenter+xOffpix.value, sciCube.ycenter+yOffpix.value)
                 apEx = RectangularAperture(apCen, w=wpix.value, h=hpix.value)
-                #apMask = apEx.to_mask(method='exact',subpixels=5)
 
             #Perform the extraction, one spectral pixel at a time
             spec = np.zeros(dnpts)
@@ -108,9 +110,15 @@ class Beam(object):
                 else:
                     sci_img = data[i,:,:]*u.MJy/u.sr * psr
                     err_img = derr[i,:,:]*u.MJy/u.sr * psr
-                #apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='subpixel', subpixels=5)
-                #apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='exact', subpixels=5)
-                apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='center')
+                
+                if method == 'subpixel':
+                    apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='subpixel', subpixels=subpixels)
+                elif method == 'center':
+                    apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='center')
+                elif method == 'exact':
+                    apPhot = aperture_photometry(data = sci_img, apertures = apEx, error = err_img, method='exact')
+                else:
+                    raise ValueError('Method must be selected from center, exact, or subpixel')
 
                 flux_jy = (apPhot['aperture_sum'][0]).to(u.Jy)
                 noise_jy = (apPhot['aperture_sum_err'][0]).to(u.Jy)
@@ -141,7 +149,6 @@ class Beam(object):
             wvls, spec, sigma = np.array(combined_waves[0]), np.array(combined_specs[0]), np.array(combined_sigmas[0])
         else:
             wvls, spec, sigma = subchannel_splice(combined_waves, combined_specs, combined_sigmas)
-
 
 
         #Only extract the wavelength region of interest

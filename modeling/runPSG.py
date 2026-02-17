@@ -15,7 +15,7 @@ class runPSG(object):
         super().__init__()
         self.name = self.__class__.__name__
 
-    def getModels(self, specFile, resFile, name, objectType, composition=None, retrieval=None, mode=None, withCont=False, withPlots=False, withEph=True, local=True, masterATM=False, masterATMFile=None):
+    def getModels(self, specFile, resFile, name, objectType, composition=None, retrieval_options=None, retrieval=None, mode=None, withCont=False, withPlots=False, withEph=True, local=True, masterATM=False, masterATMFile=None):
         
         """
         Run a requested PSG model and retrieval.
@@ -62,7 +62,7 @@ class runPSG(object):
 
         #Run a retrieval if requested
         if retrieval != None:
-            cfgHelper.atmCFG(specFile,resFile,composition,retrieval,mode,withCont,local,masterATM,masterATMFile)
+            cfgHelper.atmCFG(specFile,resFile,composition,retrieval_options,retrieval,mode,withCont,local,masterATM,masterATMFile)
 
         if withPlots:
             plotPSG.makePlots(resFile,withPlots)

@@ -18,9 +18,9 @@ class Mapping(object):
         self.name = self.__class__.__name__
 
     @u.quantity_input(radAp=u.arcsec)
-    def makeMaps(self,cubeFiles,specStem,csvFile,waveLo,waveUp,radAp,name,objectType,composition,retrieval,withCont=False,smooth=None,
-                 box=None,withEph=True,local=True,tempFix=False,tempFile=None,masterATM=False,masterATMFile=None,
-                 compFix=False,compFile=None,compKeys=None,compNames=None,compUnits=None):
+    def makeMaps(self,cubeFiles,specStem,csvFile,waveLo,waveUp,radAp,name,objectType,composition,retrieval_options,retrieval,
+                 withCont=False,smooth=None,box=None,withEph=True,local=True,tempFix=False,tempFile=None,masterATM=False,
+                 masterATMFile=None,compFix=False,compFile=None,compKeys=None,compNames=None,compUnits=None,mask=None):
         """
         Read in a JWST IFU cube. Find the photocenter. Extract spectra across the
         entire cube. Send them to the PSG for analysis. Plot the model and extracted spectrum.
@@ -92,15 +92,18 @@ class Mapping(object):
         #If there is a temperature profile provided, read it in and interpolate a model
         if tempFix:
             #Read in a temperature profile stored in a FITS file. Create an interpolated model. May need to change pixel scale - this assumes the temperature profile comes from MIRI/CH1
-            dfits = fits.open(tempFile)
-            #temperature
-            para_temps = dfits[3].data
-            #MIRI pixel
-            rho = dfits[1].data
-            #MIRI pixel scale
-            pScale = 0.13*u.arcsec
-            #Interpolate
-            temp_model = interp1d(rho[:len(para_temps)]*pScale.value,para_temps,kind='linear',fill_value=(para_temps[0],para_temps[-1]),bounds_error=False)
+            # dfits = fits.open(tempFile)
+            # #temperature
+            # para_temps = dfits[3].data
+            # #MIRI pixel
+            # rho = dfits[1].data
+            # #MIRI pixel scale
+            # pScale = 0.13*u.arcsec
+            # #Interpolate
+            # temp_model = interp1d(rho[:len(para_temps)]*pScale.value,para_temps,kind='linear',fill_value=(para_temps[0],para_temps[-1]),bounds_error=False)
+            dfTemp = pd.read_csv(tempFile)
+            temp_model = interp1d(dfTemp['Distance (arcsec)'], dfTemp['COMA-TEMPERATURE'], kind='cubic', fill_value=(dfTemp['COMA-TEMPERATURE'][0],dfTemp['COMA-TEMPERATURE'][len(dfTemp)-1]),bounds_error=False)
+
 
         #If there is a pixel-by-pixel map for use in fixing some parameters, read those in
         if compFix:
@@ -133,9 +136,12 @@ class Mapping(object):
                     specFile = specStem+'-{:.2f}-x-{:.2f}-arcsecRadAp-{:.1f}-arcsecXoff-{:.1f}-arcsecYoff-{:.2f}um-to-{:.2f}um.txt'.format(radAp[0].value,radAp[1].value,dxArc.value,dyArc.value,min(waveLo).value,max(waveUp).value)
                     resFile = specFile[:-3]+'.retrieval-results.txt'
                     beam = Beam()
-                    beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLo=waveLo, waveUp=waveUp, radAp=radAp, xOffset=dxArc, yOffset=dyArc, mode='rectangle', smooth=smooth, withPlots=True)
+                    beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLo=waveLo, waveUp=waveUp, radAp=radAp, 
+                                                   xOffset=dxArc, yOffset=dyArc, mode='rectangle', smooth=smooth, mask=mask, withPlots=True)
                     beamModel = runPSG()
-                    beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval=retrieval, mode='mapping', withCont=withCont, withPlots=True, withEph=withEph, local=local, masterATM=masterATM, masterATMFile=masterATMFile)
+                    beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval_options=retrieval_options, 
+                                        retrieval=retrieval, mode='mapping', withCont=withCont, withPlots=True, withEph=withEph, 
+                                        local=local, masterATM=masterATM, masterATMFile=masterATMFile)
                     
                     try:
                         results = readPSG(resFile)
