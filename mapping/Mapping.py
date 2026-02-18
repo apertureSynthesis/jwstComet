@@ -91,16 +91,6 @@ class Mapping(object):
 
         #If there is a temperature profile provided, read it in and interpolate a model
         if tempFix:
-            #Read in a temperature profile stored in a FITS file. Create an interpolated model. May need to change pixel scale - this assumes the temperature profile comes from MIRI/CH1
-            # dfits = fits.open(tempFile)
-            # #temperature
-            # para_temps = dfits[3].data
-            # #MIRI pixel
-            # rho = dfits[1].data
-            # #MIRI pixel scale
-            # pScale = 0.13*u.arcsec
-            # #Interpolate
-            # temp_model = interp1d(rho[:len(para_temps)]*pScale.value,para_temps,kind='linear',fill_value=(para_temps[0],para_temps[-1]),bounds_error=False)
             dfTemp = pd.read_csv(tempFile)
             temp_model = interp1d(dfTemp['Distance (arcsec)'], dfTemp['COMA-TEMPERATURE'], kind='cubic', fill_value=(dfTemp['COMA-TEMPERATURE'][0],dfTemp['COMA-TEMPERATURE'][len(dfTemp)-1]),bounds_error=False)
 
@@ -137,7 +127,8 @@ class Mapping(object):
                     resFile = specFile[:-3]+'.retrieval-results.txt'
                     beam = Beam()
                     beamExtract = beam.extractSpec(cubeFiles=cubeFiles, specFile=specFile, waveLo=waveLo, waveUp=waveUp, radAp=radAp, 
-                                                   xOffset=dxArc, yOffset=dyArc, mode='rectangle', smooth=smooth, mask=mask, withPlots=True)
+                                                   xOffset=dxArc, yOffset=dyArc, mode='rectangle', method='center', smooth=smooth, 
+                                                   mask=mask, withPlots=True)
                     beamModel = runPSG()
                     beamModel.getModels(specFile=specFile, resFile=resFile, name=name, objectType=objectType, composition=composition, retrieval_options=retrieval_options, 
                                         retrieval=retrieval, mode='mapping', withCont=withCont, withPlots=True, withEph=withEph, 
