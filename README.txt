@@ -47,4 +47,5 @@ pyenv activate jwstComet
 pip install -r requirements.txt
 
 Usage:
-Jupyter notebooks are included to provide examples
+Jupyter notebooks are included to provide examples. Example files contain JWST NIRSpec IFU
+observations of comet C/2017 K2 (Woodward et al. 2025, Planetary Science Journal, 6, 139)
