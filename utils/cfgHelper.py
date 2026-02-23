@@ -337,38 +337,38 @@ def atmCFG(specFile, resFile, composition, retrieval_options, retrieval, mode, w
                     res_type = 'um'
             print(res_element,res_type)
             #Work out the beam size and geometry
-            fn.write('<GENERATOR-RESOLUTION>{}\n'.format(res_element))
+            fn.write('<GENERATOR-RESOLUTION>{:.3f}\n'.format(res_element))
             fn.write('<GENERATOR-RESOLUTIONUNIT>{}\n'.format(res_type))
             if mode == 'circle':
-                fn.write('<GENERATOR-BEAM>{}\n'.format(2*radAp))
+                fn.write('<GENERATOR-BEAM>{:.5f}\n'.format(2*radAp))
                 fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
-                fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset))
-                fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset))
+                fn.write('<GEOMETRY-OFFSET-NS>{:.5f}\n'.format(yOffset))
+                fn.write('<GEOMETRY-OFFSET-EW>{:.5f}\n'.format(xOffset))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')
             elif mode == 'rectangle':
-                fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(radWidth,radHeight))
+                fn.write('<GENERATOR-BEAM>{:.5f},{:.5f},0,R\n'.format(radWidth,radHeight))
                 fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
-                fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset))
-                fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset))
+                fn.write('<GEOMETRY-OFFSET-NS>{:.5f}\n'.format(yOffset))
+                fn.write('<GEOMETRY-OFFSET-EW>{:.5f}\n'.format(xOffset))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')
             elif mode == 'mapping':
-                fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format(radWidth,radHeight))
+                fn.write('<GENERATOR-BEAM>{:.5f},{:.5f},0,R\n'.format(radWidth,radHeight))
                 fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
-                fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(yOffset))
-                fn.write('<GEOMETRY-OFFSET-EW>{}\n'.format(xOffset))
+                fn.write('<GEOMETRY-OFFSET-NS>{:.5f}\n'.format(yOffset))
+                fn.write('<GEOMETRY-OFFSET-EW>{:.5f}\n'.format(xOffset))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')
             elif mode == 'azimuthal':
                 if '#Inner annulus radius (arcsec)' in line:
                     innerRadius = float(line.split()[-1])
                 if '#Outer annulus radius (arcsec)' in line:
                     outerRadius = float(line.split()[-1])
-                fn.write('<GENERATOR-BEAM>{},{},0,R\n'.format((outerRadius - innerRadius), psa))
+                fn.write('<GENERATOR-BEAM>{:.5f},{:.5f},0,R\n'.format((outerRadius - innerRadius), psa))
                 fn.write('<GENERATOR-BEAM-UNIT>arcsec\n')
                 fn.write('<GEOMETRY-OFFSET-EW>0\n')
                 if innerRadius == 0:
                     fn.write('<GEOMETRY-OFFSET-NS>0\n')
                 else:
-                    fn.write('<GEOMETRY-OFFSET-NS>{}\n'.format(0.5*(innerRadius + outerRadius)))
+                    fn.write('<GEOMETRY-OFFSET-NS>{:.5f}\n'.format(0.5*(innerRadius + outerRadius)))
                 fn.write('<GEOMETRY-OFFSET-UNIT>arcsec\n')    
             else:
                 print('Allowed modes are circle, rectangle, azimuthal, and mapping.')
