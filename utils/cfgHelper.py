@@ -295,18 +295,7 @@ def atmCFG(specFile, resFile, composition, retrieval_options, retrieval, mode, w
             if 'RP' in retrieval_options:
                 res_element = retrieval_options['RP']['res_element']
                 res_type = retrieval_options['RP']['res_type']
-                print('Using manual resolution')
-            elif 'RP-list' in retrieval_options:
-                if wave[-1] <= 1.80:
-                    res_element = 0.470
-                elif (wave[0] > 1.80) & (wave[-1] <= 3.20):
-                    res_element = 0.790
-                elif (wave[0] > 3.20) & (wave[-1] <= 5.10):
-                    res_element = 1.320
-                else:
-                    res_element = 1.700
-                res_type = 'nm'
-                print('Using manual wavelength-derived resolution elements')
+                print('Using manually set resolution')
             else:
                 print('Using STScI RP/dispersion lookup table')
                 if instrument == 'NIRSPEC':
@@ -321,14 +310,21 @@ def atmCFG(specFile, resFile, composition, retrieval_options, retrieval, mode, w
                     #Read in the FITS file and find the RP for the midpoint wavelength of the extract
                     #Interpolate the dispersion/RP curve based on user preference
                     if retrieval_options['RP-type'] == 'dispersion':
-                        rpCurve = interp1d(rpWave, rpD, kind='cubic')
-                        #Get rp from the midpoint wavelength of the extract
-                        res_element = np.sqrt(2*np.log(2))*2 * rpCurve(0.5*(wave[0]+wave[-1]))
-                        res_type = 'um'
+                        if wave[-1] <= 1.80:
+                            res_element = 0.470
+                        elif (wave[0] > 1.80) & (wave[-1] <= 3.20):
+                            res_element = 0.790
+                        elif (wave[0] > 3.20) & (wave[-1] <= 5.10):
+                            res_element = 1.320
+                        else:
+                            res_element = 1.700
+                        res_type = 'nm'
+                        print('Using STScI dispersion-based values')
                     else:
                         rpCurve = interp1d(rpWave, rpR, kind='cubic')
                         res_element = rpCurve(0.5*(wave[0]+wave[-1]))
                         res_type = 'RP'
+                        print('Using STScI-based RP-based values')
                 elif instrument == 'MIRI':
                     if '1/' in grating:
                         res_element = np.sqrt(2*np.log(2))*2*0.000828
