@@ -116,7 +116,7 @@ def atmCFG(specFile, resFile, composition, retrieval_options, retrieval, mode, w
             'G235H/F170LP': {'file': 'jwst_nirspec_g235h_disp.fits'},
             'G395H/F290LP': {'file': 'jwst_nirspec_g395h_disp.fits'}
         },
-        'MIRI':{ #Based on ranges of values given in Labiano+2021. STScI doesn't currently have comparable curves as for NIRSpec
+        'MIRI-RP':{ #Based on ranges of values given in Labiano+2021. STScI doesn't currently have comparable curves as for NIRSpec
             '1/SHORT': {'low': 4.885/3400, 'high': 5.751/4000},
             '1/MEDIUM': {'low': 5.634/3420, 'high': 6.632/3990},
             '1/LONG': {'low': 6.408/3330, 'high': 7.524/3840},
@@ -133,6 +133,28 @@ def atmCFG(specFile, resFile, composition, retrieval_options, retrieval, mode, w
             '2/MULTIPLE': {'low': 7.477/3190, 'high': 11.753/3374},
             '3/MULTIPLE': {'low': 11.481/2450, 'high': 18.072/2790},
             '4/MULTIPLE': {'low': 17.651/1400, 'high': 28.329/1520}
+        },
+        #Relationship for R vs lambda, Pontoppidan+2024
+        'MIRI-disp': {
+            (4.90, 5.74): {'a': -19.5, 'b': 572}, #1A
+            (5.74, 6.63): {'a': 2742, 'b': 150}, #1B
+            (6.63, 7.65): {'a': -543, 'b': 601}, #1C
+            (7.65, 8.77): {'a': 332, 'b': 400}, #2A
+            (8.77, 10.13): {'a': -331, 'b': 400}, #2B
+            (10.13, 11.70): {'a': -231, 'b': 264}, #2C
+            (11.70, 13.47): {'a': -5120, 'b': 633}, #3A
+            (13.47, 15.57): {'a': -1871, 'b': 317}, #3B
+            (15.57, 17.98): {'a': -2445, 'b': 312}, #3C
+            (17.98, 20.95): {'a': -2166, 'b': 225}, #4A
+            (20.95, 24.48): {'a': -1176, 'b': 150}, #4B
+            (24.48, 28.10): {'a': -3601, 'b': 216} #4C
+        },
+        #Relationship for d-lambda vs lambda, Villanueva+
+        'NIRSpec-disp': {
+            (1.05, 1.80): 0.47,
+            (1.80, 3.20): 0.79,
+            (3.20, 5.10): 1.32,
+            (5.10, 7.50): 1.70
         }
     }
 
@@ -310,27 +332,45 @@ def atmCFG(specFile, resFile, composition, retrieval_options, retrieval, mode, w
                     #Read in the FITS file and find the RP for the midpoint wavelength of the extract
                     #Interpolate the dispersion/RP curve based on user preference
                     if retrieval_options['RP-type'] == 'dispersion':
-                        if wave[-1] <= 1.80:
-                            res_element = 0.470
-                        elif (wave[0] > 1.80) & (wave[-1] <= 3.20):
-                            res_element = 0.790
-                        elif (wave[0] > 3.20) & (wave[-1] <= 5.10):
-                            res_element = 1.320
-                        else:
-                            res_element = 1.700
+                        mwave = 0.5*(wave[0] + wave[-1])
+                        for (wlo, wup), disp in resolution['NIRSpec-disp'].items():
+                            if wlo <= mwave < wup:
+                                res_element = disp
+                        # if wave[-1] <= 1.80:
+                        #     res_element = 0.470
+                        # elif (wave[0] > 1.80) & (wave[-1] <= 3.20):
+                        #     res_element = 0.790
+                        # elif (wave[0] > 3.20) & (wave[-1] <= 5.10):
+                        #     res_element = 1.320
+                        # else:
+                        #     res_element = 1.700
                         res_type = 'nm'
-                        print('Using STScI dispersion-based values')
+                        print('Using empirical dispersion-based values')
                     else:
                         rpCurve = interp1d(rpWave, rpR, kind='cubic')
                         res_element = rpCurve(0.5*(wave[0]+wave[-1]))
                         res_type = 'RP'
                         print('Using STScI-based RP-based values')
                 elif instrument == 'MIRI':
-                    if '1/' in grating:
-                        res_element = np.sqrt(2*np.log(2))*2*0.000828
+                    if retrieval_options['RP-type'] == 'dispersion':
+                        mwave = 0.5*(wave[0] + wave[-1])
+                        for (wlo, wup), disp in resolution['MIRI-disp'].items():
+                            if wlo <= mwave < wup:
+                                res_element =  mwave / (disp['a'] + disp['b']*mwave)
+                        res_type = 'um'
+                        print('Using Pontoppidan+2024 values')
+                    elif retrieval_options['RP-type'] == 'RP':
+                        for (wlo, wup), disp in resolution['MIRI-disp'].items():
+                            if wlo <= mwave < wup:
+                                res_element =  (disp['a'] + disp['b']*mwave)
+                        res_type = 'RP'      
+                        print('Using Pontoppidan+2024 values')                  
                     else:
-                        res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
-                    res_type = 'um'
+                        if '1/' in grating:
+                            res_element = np.sqrt(2*np.log(2))*2*0.000828
+                        else:
+                            res_element = 0.5*(resolution[instrument][grating]['low'] + resolution[instrument][grating]['high'])
+                        res_type = 'um'
             print(res_element,res_type)
             #Work out the beam size and geometry
             fn.write('<GENERATOR-RESOLUTION>{:.3f}\n'.format(res_element))

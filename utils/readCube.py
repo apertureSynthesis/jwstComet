@@ -51,7 +51,10 @@ class readCube(object):
         #Collapse the cube and find the photocenter
         cdata = np.nansum(data, axis=0)
         #Set pixels off chip to nan
-        k = np.where(wmap[50,:,:] == 0)
+        try:
+            k = np.where(wmap[50,:,:] == 0)
+        except:
+            k = np.where(wmap[1,:,:] == 0)
         cdata[k] = np.nan
         ind_max = np.where(cdata == np.nanmax(cdata))
         xcenter = ind_max[1][0]

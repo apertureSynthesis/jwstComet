@@ -21,6 +21,7 @@ def makePlots(retFile,withPlots=False):
         base  = []
         #Read the file line by line
         with open(retFile, 'r') as fn:
+            hasBase = False
             for line in fn:
                 if 'results_dat.txt' in line:
                     break
@@ -28,7 +29,7 @@ def makePlots(retFile,withPlots=False):
             for line in fn:
                 if 'results_log.txt' in line:
                     break
-                hasBase = True
+                
                 try:
                     lwave,lspec,ldspec,lmodel,lbase = line.split()
                     wave = np.concatenate([wave,[float(lwave)]])
@@ -36,8 +37,8 @@ def makePlots(retFile,withPlots=False):
                     dspec = np.concatenate([dspec,[float(ldspec)]])
                     model = np.concatenate([model,[float(lmodel)]])
                     base = np.concatenate([base,[float(lbase)]])
+                    hasBase = True
                 except:
-                    hasBase = False
                     lwave,lspec,ldspec,lmodel = line.split()
                     wave = np.concatenate([wave,[float(lwave)]])
                     spec = np.concatenate([spec,[float(lspec)]])
